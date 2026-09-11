@@ -1,0 +1,1095 @@
+{
+ "schema": 2,
+ "results": [
+  {
+   "key": "r0",
+   "name": "Initial",
+   "kind": "initial"
+  },
+  {
+   "key": "r1",
+   "name": "GraphBin",
+   "kind": "graphbin"
+  },
+  {
+   "key": "r2",
+   "name": "OtherBinner",
+   "kind": "other"
+  }
+ ],
+ "nodes": [
+  {
+   "id": "NODE_0",
+   "x": -36.0,
+   "y": 0.0,
+   "len": 1000,
+   "gc": 40,
+   "cov": 5,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": false,
+   "bins": {
+    "r0": "bin_1",
+    "r1": "bin_1",
+    "r2": "bin_1"
+   },
+   "initial_bin": "bin_1",
+   "final_bin": "bin_1",
+   "changed": false,
+   "n_distinct": 1,
+   "disagreement": 0.0,
+   "consensus_bin": "bin_1",
+   "consensus_frac": 1.0,
+   "prov": {
+    "stage": "seed",
+    "was_stripped": false,
+    "strip_reason": null,
+    "initial_bin": "bin_1",
+    "final_bin": "bin_1",
+    "hop": 0,
+    "margin": 1.0,
+    "entropy": 0.0,
+    "confidence": 1.0,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "bin_1": 2
+    },
+    "seed_neighbour_bins": {
+     "bin_1": 1
+    },
+    "scores": [],
+    "support": [],
+    "n_support": 0,
+    "first_iter": null,
+    "history": [],
+    "n_switches": 0
+   }
+  },
+  {
+   "id": "NODE_1",
+   "x": -48.0,
+   "y": 20.784609690826528,
+   "len": 1137,
+   "gc": 43,
+   "cov": 12,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": false,
+   "bins": {
+    "r0": "bin_1",
+    "r1": "bin_1",
+    "r2": "bin_1"
+   },
+   "initial_bin": "bin_1",
+   "final_bin": "bin_1",
+   "changed": false,
+   "n_distinct": 1,
+   "disagreement": 0.0,
+   "consensus_bin": "bin_1",
+   "consensus_frac": 1.0,
+   "prov": {
+    "stage": "seed",
+    "was_stripped": false,
+    "strip_reason": null,
+    "initial_bin": "bin_1",
+    "final_bin": "bin_1",
+    "hop": 0,
+    "margin": 1.0,
+    "entropy": 0.0,
+    "confidence": 1.0,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "bin_1": 2
+    },
+    "seed_neighbour_bins": {
+     "bin_1": 1
+    },
+    "scores": [],
+    "support": [],
+    "n_support": 0,
+    "first_iter": null,
+    "history": [],
+    "n_switches": 0
+   }
+  },
+  {
+   "id": "NODE_2",
+   "x": -72.0,
+   "y": 20.784609690826528,
+   "len": 1274,
+   "gc": 46,
+   "cov": 19,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": false,
+   "bins": {
+    "r0": "bin_1",
+    "r1": "bin_1",
+    "r2": "bin_1"
+   },
+   "initial_bin": "bin_1",
+   "final_bin": "bin_1",
+   "changed": false,
+   "n_distinct": 1,
+   "disagreement": 0.0,
+   "consensus_bin": "bin_1",
+   "consensus_frac": 1.0,
+   "prov": {
+    "stage": "seed",
+    "was_stripped": false,
+    "strip_reason": null,
+    "initial_bin": "bin_1",
+    "final_bin": "bin_1",
+    "hop": 0,
+    "margin": 1.0,
+    "entropy": 0.0,
+    "confidence": 1.0,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "bin_1": 2
+    },
+    "seed_neighbour_bins": {
+     "bin_1": 1
+    },
+    "scores": [],
+    "support": [],
+    "n_support": 0,
+    "first_iter": null,
+    "history": [],
+    "n_switches": 0
+   }
+  },
+  {
+   "id": "NODE_3",
+   "x": -84.0,
+   "y": 2.9391523179536475e-15,
+   "len": 1411,
+   "gc": 49,
+   "cov": 26,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": false,
+   "bins": {
+    "r0": "bin_1",
+    "r1": "bin_1",
+    "r2": "bin_1"
+   },
+   "initial_bin": "bin_1",
+   "final_bin": "bin_1",
+   "changed": false,
+   "n_distinct": 1,
+   "disagreement": 0.0,
+   "consensus_bin": "bin_1",
+   "consensus_frac": 1.0,
+   "prov": {
+    "stage": "seed",
+    "was_stripped": false,
+    "strip_reason": null,
+    "initial_bin": "bin_1",
+    "final_bin": "bin_1",
+    "hop": 0,
+    "margin": 1.0,
+    "entropy": 0.0,
+    "confidence": 1.0,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "bin_1": 2
+    },
+    "seed_neighbour_bins": {
+     "bin_1": 1
+    },
+    "scores": [],
+    "support": [],
+    "n_support": 0,
+    "first_iter": null,
+    "history": [],
+    "n_switches": 0
+   }
+  },
+  {
+   "id": "NODE_4",
+   "x": -72.00000000000001,
+   "y": -20.78460969082652,
+   "len": 1548,
+   "gc": 52,
+   "cov": 33,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": false,
+   "bins": {
+    "r0": "bin_1",
+    "r1": "bin_1",
+    "r2": "bin_1"
+   },
+   "initial_bin": "bin_1",
+   "final_bin": "bin_1",
+   "changed": false,
+   "n_distinct": 1,
+   "disagreement": 0.0,
+   "consensus_bin": "bin_1",
+   "consensus_frac": 1.0,
+   "prov": {
+    "stage": "seed",
+    "was_stripped": false,
+    "strip_reason": null,
+    "initial_bin": "bin_1",
+    "final_bin": "bin_1",
+    "hop": 0,
+    "margin": 1.0,
+    "entropy": 0.0,
+    "confidence": 1.0,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "bin_1": 2
+    },
+    "seed_neighbour_bins": {
+     "bin_1": 1
+    },
+    "scores": [],
+    "support": [],
+    "n_support": 0,
+    "first_iter": null,
+    "history": [],
+    "n_switches": 0
+   }
+  },
+  {
+   "id": "NODE_5",
+   "x": -48.0,
+   "y": -20.784609690826528,
+   "len": 1685,
+   "gc": 55,
+   "cov": 40,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": false,
+   "bins": {
+    "r0": "bin_1",
+    "r1": "bin_1",
+    "r2": "bin_1"
+   },
+   "initial_bin": "bin_1",
+   "final_bin": "bin_1",
+   "changed": false,
+   "n_distinct": 1,
+   "disagreement": 0.0,
+   "consensus_bin": "bin_1",
+   "consensus_frac": 1.0,
+   "prov": {
+    "stage": "seed",
+    "was_stripped": false,
+    "strip_reason": null,
+    "initial_bin": "bin_1",
+    "final_bin": "bin_1",
+    "hop": 0,
+    "margin": 1.0,
+    "entropy": 0.0,
+    "confidence": 1.0,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "bin_1": 2
+    },
+    "seed_neighbour_bins": {
+     "bin_1": 1
+    },
+    "scores": [],
+    "support": [],
+    "n_support": 0,
+    "first_iter": null,
+    "history": [],
+    "n_switches": 0
+   }
+  },
+  {
+   "id": "NODE_6",
+   "x": 84.0,
+   "y": 0.0,
+   "len": 1822,
+   "gc": 58,
+   "cov": 47,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": false,
+   "bins": {
+    "r0": "bin_2",
+    "r1": "bin_2",
+    "r2": "bin_2"
+   },
+   "initial_bin": "bin_2",
+   "final_bin": "bin_2",
+   "changed": false,
+   "n_distinct": 1,
+   "disagreement": 0.0,
+   "consensus_bin": "bin_2",
+   "consensus_frac": 1.0,
+   "prov": {
+    "stage": "seed",
+    "was_stripped": false,
+    "strip_reason": null,
+    "initial_bin": "bin_2",
+    "final_bin": "bin_2",
+    "hop": 0,
+    "margin": 1.0,
+    "entropy": 0.0,
+    "confidence": 1.0,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "bin_2": 2
+    },
+    "seed_neighbour_bins": {
+     "bin_2": 1
+    },
+    "scores": [],
+    "support": [],
+    "n_support": 0,
+    "first_iter": null,
+    "history": [],
+    "n_switches": 0
+   }
+  },
+  {
+   "id": "NODE_7",
+   "x": 72.0,
+   "y": 20.784609690826528,
+   "len": 1959,
+   "gc": 61,
+   "cov": 54,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": false,
+   "bins": {
+    "r0": "bin_2",
+    "r1": "bin_2",
+    "r2": "bin_2"
+   },
+   "initial_bin": "bin_2",
+   "final_bin": "bin_2",
+   "changed": false,
+   "n_distinct": 1,
+   "disagreement": 0.0,
+   "consensus_bin": "bin_2",
+   "consensus_frac": 1.0,
+   "prov": {
+    "stage": "seed",
+    "was_stripped": false,
+    "strip_reason": null,
+    "initial_bin": "bin_2",
+    "final_bin": "bin_2",
+    "hop": 0,
+    "margin": 1.0,
+    "entropy": 0.0,
+    "confidence": 1.0,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "bin_2": 2
+    },
+    "seed_neighbour_bins": {
+     "bin_2": 1
+    },
+    "scores": [],
+    "support": [],
+    "n_support": 0,
+    "first_iter": null,
+    "history": [],
+    "n_switches": 0
+   }
+  },
+  {
+   "id": "NODE_8",
+   "x": 48.00000000000001,
+   "y": 20.784609690826528,
+   "len": 2096,
+   "gc": 64,
+   "cov": 61,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": false,
+   "bins": {
+    "r0": "bin_2",
+    "r1": "bin_2",
+    "r2": "bin_2"
+   },
+   "initial_bin": "bin_2",
+   "final_bin": "bin_2",
+   "changed": false,
+   "n_distinct": 1,
+   "disagreement": 0.0,
+   "consensus_bin": "bin_2",
+   "consensus_frac": 1.0,
+   "prov": {
+    "stage": "seed",
+    "was_stripped": false,
+    "strip_reason": null,
+    "initial_bin": "bin_2",
+    "final_bin": "bin_2",
+    "hop": 0,
+    "margin": 1.0,
+    "entropy": 0.0,
+    "confidence": 1.0,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "bin_2": 2
+    },
+    "seed_neighbour_bins": {
+     "bin_2": 1
+    },
+    "scores": [],
+    "support": [],
+    "n_support": 0,
+    "first_iter": null,
+    "history": [],
+    "n_switches": 0
+   }
+  },
+  {
+   "id": "NODE_9",
+   "x": 36.0,
+   "y": 2.9391523179536475e-15,
+   "len": 2233,
+   "gc": 42,
+   "cov": 68,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": false,
+   "bins": {
+    "r0": "bin_2",
+    "r1": "bin_2",
+    "r2": "bin_2"
+   },
+   "initial_bin": "bin_2",
+   "final_bin": "bin_2",
+   "changed": false,
+   "n_distinct": 1,
+   "disagreement": 0.0,
+   "consensus_bin": "bin_2",
+   "consensus_frac": 1.0,
+   "prov": {
+    "stage": "seed",
+    "was_stripped": false,
+    "strip_reason": null,
+    "initial_bin": "bin_2",
+    "final_bin": "bin_2",
+    "hop": 0,
+    "margin": 1.0,
+    "entropy": 0.0,
+    "confidence": 1.0,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "bin_2": 2
+    },
+    "seed_neighbour_bins": {
+     "bin_2": 1
+    },
+    "scores": [],
+    "support": [],
+    "n_support": 0,
+    "first_iter": null,
+    "history": [],
+    "n_switches": 0
+   }
+  },
+  {
+   "id": "NODE_10",
+   "x": 47.999999999999986,
+   "y": -20.78460969082652,
+   "len": 2370,
+   "gc": 45,
+   "cov": 75,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": false,
+   "bins": {
+    "r0": "bin_2",
+    "r1": "bin_2",
+    "r2": "bin_2"
+   },
+   "initial_bin": "bin_2",
+   "final_bin": "bin_2",
+   "changed": false,
+   "n_distinct": 1,
+   "disagreement": 0.0,
+   "consensus_bin": "bin_2",
+   "consensus_frac": 1.0,
+   "prov": {
+    "stage": "seed",
+    "was_stripped": false,
+    "strip_reason": null,
+    "initial_bin": "bin_2",
+    "final_bin": "bin_2",
+    "hop": 0,
+    "margin": 1.0,
+    "entropy": 0.0,
+    "confidence": 1.0,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "bin_2": 2
+    },
+    "seed_neighbour_bins": {
+     "bin_2": 1
+    },
+    "scores": [],
+    "support": [],
+    "n_support": 0,
+    "first_iter": null,
+    "history": [],
+    "n_switches": 0
+   }
+  },
+  {
+   "id": "NODE_11",
+   "x": 72.0,
+   "y": -20.784609690826528,
+   "len": 2507,
+   "gc": 48,
+   "cov": 82,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": false,
+   "bins": {
+    "r0": "bin_2",
+    "r1": "bin_2",
+    "r2": "bin_2"
+   },
+   "initial_bin": "bin_2",
+   "final_bin": "bin_2",
+   "changed": false,
+   "n_distinct": 1,
+   "disagreement": 0.0,
+   "consensus_bin": "bin_2",
+   "consensus_frac": 1.0,
+   "prov": {
+    "stage": "seed",
+    "was_stripped": false,
+    "strip_reason": null,
+    "initial_bin": "bin_2",
+    "final_bin": "bin_2",
+    "hop": 0,
+    "margin": 1.0,
+    "entropy": 0.0,
+    "confidence": 1.0,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "bin_2": 2
+    },
+    "seed_neighbour_bins": {
+     "bin_2": 1
+    },
+    "scores": [],
+    "support": [],
+    "n_support": 0,
+    "first_iter": null,
+    "history": [],
+    "n_switches": 0
+   }
+  },
+  {
+   "id": "NODE_12",
+   "x": -22,
+   "y": 2,
+   "len": 2644,
+   "gc": 51,
+   "cov": 89,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": false,
+   "bins": {
+    "r0": null,
+    "r1": "bin_1",
+    "r2": "bin_1"
+   },
+   "initial_bin": null,
+   "final_bin": "bin_1",
+   "changed": true,
+   "n_distinct": 2,
+   "disagreement": 0.666667,
+   "consensus_bin": "bin_1",
+   "consensus_frac": 0.666667,
+   "prov": {
+    "stage": "propagated",
+    "was_stripped": false,
+    "strip_reason": null,
+    "initial_bin": null,
+    "final_bin": "bin_1",
+    "hop": 1,
+    "margin": 0.88,
+    "entropy": 0.12,
+    "confidence": 0.82,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "bin_1": 2
+    },
+    "seed_neighbour_bins": {
+     "bin_1": 1
+    },
+    "scores": [
+     [
+      "bin_1",
+      0.88
+     ],
+     [
+      "bin_2",
+      0.12
+     ]
+    ],
+    "support": [
+     [
+      "NODE_0",
+      0.31
+     ],
+     [
+      "NODE_1",
+      0.22
+     ]
+    ],
+    "n_support": 2,
+    "first_iter": 1,
+    "history": [
+     [
+      1,
+      "bin_1"
+     ]
+    ],
+    "n_switches": 0
+   }
+  },
+  {
+   "id": "NODE_13",
+   "x": 0,
+   "y": 6,
+   "len": 2781,
+   "gc": 54,
+   "cov": 6,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": false,
+   "bins": {
+    "r0": null,
+    "r1": "bin_1",
+    "r2": "bin_2"
+   },
+   "initial_bin": null,
+   "final_bin": "bin_1",
+   "changed": true,
+   "n_distinct": 3,
+   "disagreement": 1.0,
+   "consensus_bin": "bin_1",
+   "consensus_frac": 0.333333,
+   "prov": {
+    "stage": "propagated",
+    "was_stripped": false,
+    "strip_reason": null,
+    "initial_bin": null,
+    "final_bin": "bin_1",
+    "hop": 2,
+    "margin": 0.52,
+    "entropy": 0.48,
+    "confidence": 0.41,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "bin_1": 2
+    },
+    "seed_neighbour_bins": {
+     "bin_1": 1
+    },
+    "scores": [
+     [
+      "bin_1",
+      0.52
+     ],
+     [
+      "bin_2",
+      0.48
+     ]
+    ],
+    "support": [
+     [
+      "NODE_12",
+      0.18
+     ],
+     [
+      "NODE_14",
+      0.14
+     ]
+    ],
+    "n_support": 2,
+    "first_iter": 2,
+    "history": [
+     [
+      1,
+      "bin_2"
+     ],
+     [
+      2,
+      "bin_1"
+     ]
+    ],
+    "n_switches": 1
+   }
+  },
+  {
+   "id": "NODE_14",
+   "x": 22,
+   "y": 2,
+   "len": 2918,
+   "gc": 57,
+   "cov": 13,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": false,
+   "bins": {
+    "r0": null,
+    "r1": "bin_2",
+    "r2": "bin_2"
+   },
+   "initial_bin": null,
+   "final_bin": "bin_2",
+   "changed": true,
+   "n_distinct": 2,
+   "disagreement": 0.666667,
+   "consensus_bin": "bin_2",
+   "consensus_frac": 0.666667,
+   "prov": {
+    "stage": "propagated",
+    "was_stripped": false,
+    "strip_reason": null,
+    "initial_bin": null,
+    "final_bin": "bin_2",
+    "hop": 1,
+    "margin": 0.85,
+    "entropy": 0.15,
+    "confidence": 0.79,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "bin_2": 2
+    },
+    "seed_neighbour_bins": {
+     "bin_2": 1
+    },
+    "scores": [
+     [
+      "bin_2",
+      0.85
+     ],
+     [
+      "bin_1",
+      0.15
+     ]
+    ],
+    "support": [
+     [
+      "NODE_6",
+      0.29
+     ]
+    ],
+    "n_support": 1,
+    "first_iter": 1,
+    "history": [
+     [
+      1,
+      "bin_2"
+     ]
+    ],
+    "n_switches": 0
+   }
+  },
+  {
+   "id": "NODE_15",
+   "x": -40,
+   "y": -34,
+   "len": 3055,
+   "gc": 60,
+   "cov": 20,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": true,
+   "bins": {
+    "r0": "bin_2",
+    "r1": "bin_1",
+    "r2": "bin_1"
+   },
+   "initial_bin": "bin_2",
+   "final_bin": "bin_1",
+   "changed": true,
+   "n_distinct": 2,
+   "disagreement": 0.666667,
+   "consensus_bin": "bin_1",
+   "consensus_frac": 0.666667,
+   "prov": {
+    "stage": "propagated",
+    "was_stripped": true,
+    "strip_reason": "stripped_neighbour",
+    "initial_bin": "bin_2",
+    "final_bin": "bin_1",
+    "hop": 1,
+    "margin": 0.74,
+    "entropy": 0.26,
+    "confidence": 0.66,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "bin_1": 2
+    },
+    "seed_neighbour_bins": {
+     "bin_1": 1
+    },
+    "scores": [
+     [
+      "bin_1",
+      0.74
+     ],
+     [
+      "bin_2",
+      0.26
+     ]
+    ],
+    "support": [
+     [
+      "NODE_2",
+      0.25
+     ]
+    ],
+    "n_support": 1,
+    "first_iter": 2,
+    "history": [
+     [
+      2,
+      "bin_1"
+     ]
+    ],
+    "n_switches": 0
+   }
+  },
+  {
+   "id": "NODE_16",
+   "x": 40,
+   "y": -34,
+   "len": 3192,
+   "gc": 63,
+   "cov": 27,
+   "degree": 2,
+   "misbinned": true,
+   "ambiguous_multi": true,
+   "bins": {
+    "r0": "bin_1",
+    "r1": null,
+    "r2": "bin_2"
+   },
+   "initial_bin": "bin_1",
+   "final_bin": null,
+   "changed": true,
+   "n_distinct": 3,
+   "disagreement": 1.0,
+   "consensus_bin": "bin_1",
+   "consensus_frac": 0.333333,
+   "prov": {
+    "stage": "stripped_post",
+    "was_stripped": true,
+    "strip_reason": "stripped_neighbour",
+    "initial_bin": "bin_1",
+    "final_bin": null,
+    "hop": 1,
+    "margin": 0.0,
+    "entropy": 1.0,
+    "confidence": 0.0,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "(unbinned)": 2
+    },
+    "seed_neighbour_bins": {
+     "(unbinned)": 1
+    },
+    "scores": [
+     [
+      "bin_1",
+      0.0
+     ],
+     [
+      "bin_2",
+      1.0
+     ]
+    ],
+    "support": [
+     [
+      "NODE_8",
+      0.12
+     ]
+    ],
+    "n_support": 1,
+    "first_iter": 3,
+    "history": [
+     [
+      3,
+      "bin_1"
+     ]
+    ],
+    "n_switches": 0
+   }
+  },
+  {
+   "id": "NODE_17",
+   "x": 0,
+   "y": -70,
+   "len": 3329,
+   "gc": 41,
+   "cov": 34,
+   "degree": 2,
+   "misbinned": false,
+   "ambiguous_multi": false,
+   "bins": {
+    "r0": null,
+    "r1": null,
+    "r2": null
+   },
+   "initial_bin": null,
+   "final_bin": null,
+   "changed": false,
+   "n_distinct": 1,
+   "disagreement": 0.0,
+   "consensus_bin": null,
+   "consensus_frac": 1.0,
+   "prov": {
+    "stage": "unresolved",
+    "was_stripped": false,
+    "strip_reason": null,
+    "initial_bin": null,
+    "final_bin": null,
+    "hop": null,
+    "margin": 0.0,
+    "entropy": 1.0,
+    "confidence": 0.0,
+    "in_propagation": true,
+    "neighbour_bins": {
+     "(unbinned)": 2
+    },
+    "seed_neighbour_bins": {
+     "(unbinned)": 1
+    },
+    "scores": [
+     [
+      "bin_1",
+      0.0
+     ],
+     [
+      "bin_2",
+      1.0
+     ]
+    ],
+    "support": [],
+    "n_support": 0,
+    "first_iter": null,
+    "history": [],
+    "n_switches": 0
+   }
+  }
+ ],
+ "edges": [
+  [
+   "NODE_0",
+   "NODE_1"
+  ],
+  [
+   "NODE_1",
+   "NODE_2"
+  ],
+  [
+   "NODE_2",
+   "NODE_3"
+  ],
+  [
+   "NODE_3",
+   "NODE_4"
+  ],
+  [
+   "NODE_4",
+   "NODE_5"
+  ],
+  [
+   "NODE_5",
+   "NODE_0"
+  ],
+  [
+   "NODE_6",
+   "NODE_7"
+  ],
+  [
+   "NODE_7",
+   "NODE_8"
+  ],
+  [
+   "NODE_8",
+   "NODE_9"
+  ],
+  [
+   "NODE_9",
+   "NODE_10"
+  ],
+  [
+   "NODE_10",
+   "NODE_11"
+  ],
+  [
+   "NODE_11",
+   "NODE_6"
+  ],
+  [
+   "NODE_0",
+   "NODE_12"
+  ],
+  [
+   "NODE_1",
+   "NODE_12"
+  ],
+  [
+   "NODE_12",
+   "NODE_13"
+  ],
+  [
+   "NODE_13",
+   "NODE_14"
+  ],
+  [
+   "NODE_14",
+   "NODE_6"
+  ],
+  [
+   "NODE_14",
+   "NODE_7"
+  ],
+  [
+   "NODE_2",
+   "NODE_15"
+  ],
+  [
+   "NODE_15",
+   "NODE_3"
+  ],
+  [
+   "NODE_8",
+   "NODE_16"
+  ],
+  [
+   "NODE_16",
+   "NODE_9"
+  ]
+ ],
+ "bin_colors": {
+  "bin_1": "#2a78d6",
+  "bin_2": "#eb6834",
+  "bin_3": "#1baf7a"
+ },
+ "unbinned_color": "#d3d3d3",
+ "provenance_meta": {
+  "lp_iterations": 3,
+  "lp_converged": true,
+  "n_seeds": 12,
+  "stages": [
+   "seed",
+   "locked",
+   "propagated",
+   "stripped_neighbour",
+   "stripped_closest",
+   "stripped_post",
+   "unresolved"
+  ],
+  "max_iteration": 3
+ }
+}

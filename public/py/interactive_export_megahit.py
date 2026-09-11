@@ -3,6 +3,8 @@ import json
 import os
 from types import SimpleNamespace
 
+import export_common
+
 from megahit_plot import (
     build_graph,
     generate_distinct_colours,
@@ -64,11 +66,19 @@ def _seq_gc(seq):
     return 100.0 * (s.count("G") + s.count("C")) / length
 
 
+def _extra_colour(index):
+    """Deterministic colours for bins that only appear in additional results."""
+    import colorsys
+
+    hue = (0.13 + 0.37 * index) % 1.0
+    r, g, b = colorsys.hsv_to_rgb(hue, 0.45, 0.85)
+    return "#%02x%02x%02x" % (int(r * 255), int(g * 255), int(b * 255))
+
+
 def export(args_ns: SimpleNamespace, out_json="/out/interactive_graph.json"):
     gfa = args_ns.graph
     contigs_fasta = args_ns.contigs
     initial_path = args_ns.initial
-    final_path = args_ns.final
     delimiter = args_ns.delimiter
     output_path = getattr(args_ns, "output", "")
     prefix = getattr(args_ns, "prefix", "")
@@ -80,8 +90,11 @@ def export(args_ns: SimpleNamespace, out_json="/out/interactive_graph.json"):
         segments, links, segment_to_contig, contig_coverage
     )
 
-    initial_bins = _read_binning(initial_path, delimiter)
-    final_bins = _read_binning(final_path, delimiter)
+    # --- every binning result being compared, in display order ---
+    specs = export_common.build_result_specs(args_ns)
+    bins_by_result = {
+        spec["key"]: _read_binning(spec["path"], spec["delimiter"]) for spec in specs
+    }
 
     misbinned_path = getattr(args_ns, "misbinned", None)
     if not misbinned_path:
@@ -92,6 +105,13 @@ def export(args_ns: SimpleNamespace, out_json="/out/interactive_graph.json"):
     if not ambiguous_multi_path:
         ambiguous_multi_path = f"{output_path}{prefix}graphbin_ambiguous.csv"
     ambiguous_multi = _read_flag_set(ambiguous_multi_path)
+
+    # --- decision provenance recorded during refinement ---
+    provenance_path = getattr(args_ns, "provenance", None)
+    if not provenance_path:
+        provenance_path = f"{output_path}{prefix}graphbin_provenance.json"
+    provenance, provenance_meta = export_common.load_provenance(provenance_path)
+    provenance_meta["max_iteration"] = export_common.max_iteration_in(provenance)
 
     layout_path = getattr(args_ns, "layout", None)
     if not layout_path:
@@ -105,10 +125,6 @@ def export(args_ns: SimpleNamespace, out_json="/out/interactive_graph.json"):
     for v in range(len(g.vs)):
         node_id = g.vs[v]["name"]
         segment_id = g.vs[v]["segment"]
-
-        init_bin = initial_bins.get(node_id)
-        fin_bin = final_bins.get(node_id)
-        changed = init_bin != fin_bin
 
         if layout_coords and node_id in layout_coords:
             coord = layout_coords[node_id]
@@ -124,22 +140,27 @@ def export(args_ns: SimpleNamespace, out_json="/out/interactive_graph.json"):
         if seq is None:
             seq = segments.get(segment_id, "")
 
-        nodes.append(
-            {
-                "id": node_id,
-                "x": x,
-                "y": y,
-                "len": int(len(seq)),
-                "gc": _seq_gc(seq),
-                "initial_bin": init_bin,
-                "final_bin": fin_bin,
-                "changed": changed,
-                "degree": int(deg[v]),
-                "cov": g.vs[v]["coverage"],
-                "misbinned": node_id in misbinned,
-                "ambiguous_multi": node_id in ambiguous_multi,
-            }
+        node = {
+            "id": node_id,
+            "x": x,
+            "y": y,
+            "len": int(len(seq)),
+            "gc": _seq_gc(seq),
+            "degree": int(deg[v]),
+            "cov": g.vs[v]["coverage"],
+            "misbinned": node_id in misbinned,
+            "ambiguous_multi": node_id in ambiguous_multi,
+        }
+
+        export_common.attach_comparison(
+            node, {k: bins_by_result[k].get(node_id) for k in bins_by_result}, specs
         )
+
+        record = provenance.get(node_id)
+        if record:
+            node["prov"] = record
+
+        nodes.append(node)
 
     edges = [[g.vs[u]["name"], g.vs[v]["name"]] for (u, v) in g.get_edgelist()]
 
@@ -147,12 +168,17 @@ def export(args_ns: SimpleNamespace, out_json="/out/interactive_graph.json"):
     colours = generate_distinct_colours(len(bins_list))
     bin_colors = {bins_list[i]: colours[i] for i in range(len(bins_list))}
 
-    out = {
-        "nodes": nodes,
-        "edges": edges,
-        "bin_colors": bin_colors,
-        "unbinned_color": "#d3d3d3",
-    }
+    # bins that only occur in additional results still need a stable colour
+    extra_index = 0
+    for key in bins_by_result:
+        for bin_label in sorted(set(bins_by_result[key].values())):
+            if bin_label and bin_label not in bin_colors:
+                bin_colors[bin_label] = _extra_colour(extra_index)
+                extra_index += 1
+
+    out = export_common.build_export(
+        nodes, edges, specs, bin_colors, provenance_meta, unbinned_color="#d3d3d3"
+    )
 
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump(out, f)

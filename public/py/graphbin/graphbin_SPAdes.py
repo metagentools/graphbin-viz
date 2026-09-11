@@ -19,7 +19,7 @@ try:
 except Exception:
     js = None
 
-from graphbin_Func import graphbin_main
+from graphbin_Func import graphbin_main, write_provenance
 from parsers import get_initial_bin_count
 from parsers.spades_parser import (
     get_initial_binning_result,
@@ -143,7 +143,33 @@ def run(args):
     # Run GraphBin logic
     # -------------------------------------
 
-    final_bins, remove_labels, non_isolated, _lp_misbinned, ambiguous = graphbin_main(
+    # Analyst-supplied locked assignments ({contig name: bin label}) arrive from
+    # GraphBin-Viz when refinement is re-run under manual corrections.
+    locked_named = getattr(args, "locked", None) or {}
+    locked = {}
+    if locked_named:
+        import re as _re
+
+        bin_index = {label: idx for idx, label in enumerate(bins_list)}
+
+        # accept both the full contig name and the short NODE_<n> id used by
+        # the interactive graph
+        name_lookup = {}
+        for contig_idx, contig_name in contig_names.items():
+            name_lookup[contig_name] = contig_idx
+            match = _re.search(r"NODE_(.*?)_length_", contig_name)
+            if match:
+                name_lookup["NODE_" + match.group(1)] = contig_idx
+
+        for contig_label, bin_label in locked_named.items():
+            contig_idx = name_lookup.get(contig_label)
+            if contig_idx is None:
+                continue
+            if bin_label in bin_index:
+                locked[contig_idx] = bin_index[bin_label]
+        logger.info(f"Received {len(locked)} locked assignment(s) from GraphBin-Viz")
+
+    final_bins, remove_labels, non_isolated, _lp_misbinned, ambiguous, provenance = graphbin_main(
         n_bins,
         bins,
         bins_list,
@@ -153,6 +179,7 @@ def run(args):
         max_iteration,
         min_bin_size,
         show_lp_log,
+        locked=locked,
     )
 
     elapsed_time = time.time() - start_time
@@ -189,6 +216,14 @@ def run(args):
         logger.info(f"Ambiguous contigs can be found at {ambiguous_path}")
     except Exception as err:
         logger.warning(f"Failed to write ambiguous contigs file: {err}")
+
+    # Write the decision provenance record consumed by GraphBin-Viz
+    provenance_path = f"{output_path}{prefix}graphbin_provenance.json"
+    try:
+        write_provenance(provenance, provenance_path, lambda c: contig_names[c])
+        logger.info(f"Decision provenance can be found at {provenance_path}")
+    except Exception as err:
+        logger.warning(f"Failed to write provenance file: {err}")
 
     # Write result to output file
     # -----------------------------

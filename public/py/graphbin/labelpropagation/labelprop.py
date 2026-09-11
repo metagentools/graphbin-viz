@@ -1,11 +1,21 @@
-
 #!/usr/bin/env python3
 
 """
 This code has been modified from the source found at https://github.com/ZwEin27/python-labelpropagation
+
+GraphBin-Viz extension
+----------------------
+This module additionally records *decision provenance* for every vertex whose
+label is inferred by propagation: the iteration at which its winning label was
+first acquired, the full trajectory of label changes, the final score vector
+over bins, and the per-neighbour contributions that produced the winning score.
+
+The numerical behaviour of the propagation itself is unchanged; provenance is
+recorded alongside it and is only assembled when `track_provenance` is set.
 """
 
 import logging
+import math
 
 
 __author__ = "Vijini Mallawaarachchi"
@@ -19,6 +29,11 @@ __status__ = "Production"
 
 # create logger
 logger = logging.getLogger(f"GraphBin {__version__}")
+
+# how many competing bins to retain per vertex in the exported score vector
+TOP_K_SCORES = 5
+# how many contributing neighbours to retain per vertex
+TOP_K_SUPPORT = 8
 
 
 class Edge:
@@ -48,6 +63,14 @@ class LabelProp:
         self.vertex_size = 0
         self.label_size = 0
         self.labelled_size = 0
+
+        # --- provenance state (GraphBin-Viz) ---
+        self.track_provenance = False
+        self.iterations_run = 0
+        self.label_history = {}  # vertex -> [[iteration, label_index], ...]
+        self.first_labelled_iter = {}  # vertex -> iteration best label became non-zero
+        self.converged = False
+        self.final_diff = None
 
     def setup_env(self):
         # initialize vertex_in_adj_map
@@ -153,6 +176,34 @@ class LabelProp:
 
         return ans
 
+    def _best_label_index(self, arr):
+        """Index of the winning label for a score vector, or None if all zero."""
+        best_idx = None
+        best_val = 0.0
+        for i in range(len(arr)):
+            if arr[i] > best_val:
+                best_val = arr[i]
+                best_idx = i
+        return best_idx
+
+    def _record_iteration(self, iteration):
+        """Record label trajectory changes produced by this iteration."""
+        for vertex_id, arr in self.vertex_f_map.items():
+            if self.vertex_label_map.get(vertex_id):
+                # seeded vertex: label fixed from the start
+                continue
+
+            best_idx = self._best_label_index(arr)
+            if best_idx is None:
+                continue
+
+            history = self.label_history.get(vertex_id)
+            if history is None:
+                self.label_history[vertex_id] = [[iteration, best_idx]]
+                self.first_labelled_iter[vertex_id] = iteration
+            elif history[-1][1] != best_idx:
+                history.append([iteration, best_idx])
+
     def iterate(self):
         next_vertex_f_map = {}  # int, [double]
         diff = 0
@@ -190,13 +241,22 @@ class LabelProp:
 
         return diff
 
-    def run(self, eps, max_iter, show_log=False, clean_result=False):
+    def run(self, eps, max_iter, show_log=False, clean_result=False,
+            track_provenance=False):
+        self.track_provenance = bool(track_provenance)
         diff = 0.0
+        i = 0
         for i in range(max_iter):
             logger.debug("Iteration " + str(i + 1))
             diff = self.iterate()
+            if self.track_provenance:
+                self._record_iteration(i + 1)
             if diff < eps:
+                self.converged = True
                 break
+
+        self.iterations_run = i + 1
+        self.final_diff = diff
 
         if show_log:
             self.show_detail(diff, eps, i, max_iter)
@@ -216,6 +276,112 @@ class LabelProp:
                     raise Exception("r")
             ans = rtn_cleaned
         return ans
+
+    ################################################################################
+    #   Provenance (GraphBin-Viz)
+    ################################################################################
+
+    def _labels_by_index(self):
+        labels = [None] * self.label_size
+        for label, idx in self.label_index_map.items():
+            labels[int(idx)] = label
+        return labels
+
+    def get_provenance(self):
+        """Assemble a per-vertex record explaining how its label was decided.
+
+        Returns {vertex_id: {...}} with, for each propagated vertex:
+          scores        top-K [label, score] pairs from the final score vector
+          margin        (top - runner_up) / top, in [0, 1]; 1.0 = uncontested
+          entropy       normalised Shannon entropy of the score vector, in [0, 1]
+          support       top-K [neighbour_id, contribution] for the winning label
+          n_support     number of neighbours with non-zero contribution
+          first_iter    iteration at which the winning label was first acquired
+          history       [[iteration, label], ...] label trajectory
+          n_switches    number of times the winning label changed
+        """
+        if not self.track_provenance:
+            return {}
+
+        labels = self._labels_by_index()
+        out = {}
+
+        for vertex_id, arr in self.vertex_f_map.items():
+            if self.vertex_label_map.get(vertex_id):
+                continue  # seeded vertex, decided before propagation
+
+            total = 0.0
+            for value in arr:
+                total += value
+
+            ranked = sorted(
+                ((arr[i], i) for i in range(len(arr))),
+                key=lambda pair: pair[0],
+                reverse=True,
+            )
+            if not ranked or ranked[0][0] <= 0.0:
+                # never reached by any label
+                out[vertex_id] = {
+                    "scores": [],
+                    "margin": 0.0,
+                    "entropy": 0.0,
+                    "support": [],
+                    "n_support": 0,
+                    "first_iter": None,
+                    "history": [],
+                    "n_switches": 0,
+                }
+                continue
+
+            top_val, top_idx = ranked[0]
+            runner_up = ranked[1][0] if len(ranked) > 1 else 0.0
+            margin = (top_val - runner_up) / top_val if top_val > 0 else 0.0
+
+            # normalised Shannon entropy over the score distribution
+            entropy = 0.0
+            if total > 0 and self.label_size > 1:
+                for value in arr:
+                    if value > 0:
+                        p = value / total
+                        entropy -= p * math.log(p)
+                entropy = entropy / math.log(self.label_size)
+
+            scores = [
+                [labels[idx], round(val, 8)]
+                for (val, idx) in ranked[:TOP_K_SCORES]
+                if val > 0
+            ]
+
+            # per-neighbour contribution to the winning label
+            deg = self.vertex_deg_map.get(vertex_id, 0.0)
+            contributions = []
+            if deg > 0:
+                for edge in self.vertex_in_adj_map.get(vertex_id, []):
+                    src = edge.src
+                    src_scores = self.vertex_f_map.get(src)
+                    if not src_scores:
+                        continue
+                    contribution = src_scores[top_idx] * (edge.weight / deg)
+                    if contribution > 0:
+                        contributions.append([src, round(contribution, 8)])
+            contributions.sort(key=lambda pair: pair[1], reverse=True)
+
+            history = [
+                [it, labels[idx]] for (it, idx) in self.label_history.get(vertex_id, [])
+            ]
+
+            out[vertex_id] = {
+                "scores": scores,
+                "margin": round(margin, 6),
+                "entropy": round(entropy, 6),
+                "support": contributions[:TOP_K_SUPPORT],
+                "n_support": len(contributions),
+                "first_iter": self.first_labelled_iter.get(vertex_id),
+                "history": history,
+                "n_switches": max(0, len(history) - 1),
+            }
+
+        return out
 
     ################################################################################
     #   Show Info.

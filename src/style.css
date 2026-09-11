@@ -475,7 +475,8 @@ body {
 
 .tab-buttons{
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 10px;
 }
 
@@ -608,7 +609,7 @@ body {
   }
 
   .tab-buttons{
-    grid-template-columns: 1fr;
+    grid-auto-flow: row;
   }
 
   .tab-panels{
@@ -690,6 +691,84 @@ body {
 
 .range-row input[type="range"]{
   width: 100%;
+}
+
+/* ---------------------------------------------------------------------
+   Range inputs
+   A native range paints its filled portion only as far as the centre of
+   the thumb, so the track never looks full at the maximum and never looks
+   empty at the minimum. Paint the fill ourselves across the whole track
+   instead, from a --fill percentage the script keeps in step with the
+   value.
+   --------------------------------------------------------------------- */
+
+input[type="range"]{
+  --fill: 0%;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]:disabled{
+  cursor: default;
+  opacity: 0.55;
+}
+
+input[type="range"]::-webkit-slider-runnable-track{
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0 var(--fill),
+    var(--border-strong) var(--fill) 100%
+  );
+}
+
+input[type="range"]::-moz-range-track{
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0 var(--fill),
+    var(--border-strong) var(--fill) 100%
+  );
+}
+
+input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--panel);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.3);
+}
+
+input[type="range"]::-moz-range-thumb{
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--panel);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.3);
+}
+
+input[type="range"]:focus{
+  outline: none;
+}
+
+/* one deliberate ring around the control rather than the browser's default,
+   which traces the whole box and reads as a stray outline */
+input[type="range"]:focus-visible{
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 999px;
 }
 
 .range-value{
@@ -1291,3 +1370,1015 @@ select:focus{
 
 #sankey-left-title{ text-align: left; }
 #sankey-right-title{ text-align: right; }
+
+/* =====================================================================
+   Coordinated workspace
+   ---------------------------------------------------------------------
+   The graph, the feature space and the flow diagram share one selection,
+   so they are shown together. Encoding and filtering live in a toolbar
+   above the graph rather than a rail beside it, which leaves the width
+   for the views and keeps the legend next to the thing it explains.
+   ===================================================================== */
+
+.workspace{
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 16px;
+  align-items: start;
+}
+
+.ws-main{
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---------------- toolbar ---------------- */
+
+.ws-toolbar{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel-alt);
+}
+
+.tb-row{
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.tb-field{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tb-field label{
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.tb-field select{
+  min-width: 150px;
+  padding: 7px 10px;
+  font-size: 13px;
+}
+
+.tb-field-range{
+  min-width: 190px;
+  flex: 0 1 220px;
+}
+
+.tb-field-range .range-row{
+  height: 34px;
+}
+
+.tb-actions{
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.tb-btn{
+  padding: 8px 12px;
+  font-size: 12.5px;
+}
+
+/* filter chips: every filter is a simple on/off, so they read as a row */
+
+.tb-row-chips{
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.tb-chip-label{
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.tb-chip-sep{
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+}
+
+.chip{
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.chip input{
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.chip span{
+  display: inline-block;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--input-bg);
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.2;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.chip:hover span{
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.chip input:checked + span{
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.chip input:focus-visible + span{
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.tb-selection{
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ---------------- views ---------------- */
+
+/* The graph title sits at the top of its column, level with the inspector
+   heading opposite it, so the two columns start on the same line. */
+.ws-main-head{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ws-main-head .settings-title{
+  margin: 0;
+}
+
+.ws-graph{
+  min-width: 0;
+}
+
+.ws-view{
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel-alt);
+  padding: 10px 12px 12px;
+}
+
+.ws-view-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.ws-view-title{
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ws-view-note{
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.plots-note{
+  margin-bottom: 10px;
+}
+
+.ws-linkbtn{
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.ws-linkbtn:hover{
+  text-decoration: underline;
+}
+
+.ws-view-controls{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.ws-view-controls select{
+  width: auto;
+  min-width: 88px;
+  flex: 0 0 auto;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.ws-view-controls .cb{
+  min-height: 22px;
+  gap: 6px;
+}
+
+.ws-view-controls .cb-box{
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.ws-view-controls .cb-box::after{
+  width: 8px;
+  height: 5px;
+}
+
+.ws-view-controls .cb-text{
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.workspace #graph-canvas{
+  height: 680px;
+}
+
+.workspace.bottom-hidden #graph-canvas{
+  height: 920px;
+}
+
+.workspace.bottom-hidden .ws-bottom{
+  display: none;
+}
+
+/* legend sits over the graph it explains, and gets out of the way */
+
+.legend-overlay{
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 4;
+  width: 164px;
+  max-height: calc(100% - 20px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--plot-border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(2px);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.legend-overlay-head{
+  flex: none;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--plot-border);
+  padding: 7px 10px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--plot-text);
+  cursor: pointer;
+}
+
+.legend-overlay-head::after{
+  content: "–";
+  float: right;
+  opacity: 0.6;
+}
+
+.legend-overlay.collapsed .legend-overlay-head::after{
+  content: "+";
+}
+
+.legend-overlay.collapsed .bin-legend{
+  display: none;
+}
+
+.legend-overlay .bin-legend{
+  overflow-y: auto;
+  padding: 8px;
+  gap: 4px;
+}
+
+.legend-overlay .bin-legend-item{
+  background: transparent;
+  border: none;
+  padding: 1px 0;
+  color: var(--plot-text);
+  font-size: 11px;
+  align-items: flex-start;
+}
+
+.legend-overlay .bin-legend-label{
+  overflow: visible;
+  white-space: normal;
+  line-height: 1.3;
+}
+
+.legend-overlay .bin-legend-swatch{
+  margin-top: 2px;
+}
+
+/* replay belongs to the graph, so it sits directly under it */
+
+.replay-bar{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-alt);
+}
+
+.replay-bar.is-disabled{
+  opacity: 0.5;
+}
+
+.replay-bar.is-disabled .replay-hint{
+  font-style: italic;
+}
+
+.replay-label{
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.replay-bar .btn{
+  padding: 5px 12px;
+  font-size: 12px;
+  flex: none;
+}
+
+.replay-bar input[type="range"]{
+  flex: 1 1 160px;
+  min-width: 100px;
+}
+
+.replay-speed{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.replay-speed > span{
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.replay-speed select{
+  padding: 4px 8px;
+  font-size: 12px;
+  min-width: 96px;
+}
+
+.replay-hint{
+  font-size: 11.5px;
+  color: var(--muted);
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+/* the scatter carries hundreds of overlapping points, the flow a dozen
+   bands, so the scatter takes the wider half */
+
+.ws-bottom{
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.scatter-wrap{
+  position: relative;
+  height: 300px;
+  border-radius: 10px;
+  background: var(--plot-bg);
+  border: 1px solid var(--border);
+  color: var(--plot-text);
+}
+
+#feature-scatter{
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.scatter-brush .selection{
+  fill: rgba(var(--brand-blue-rgb), 0.12);
+  stroke: rgb(var(--brand-blue-rgb));
+  stroke-width: 1;
+}
+
+.ws-flow .sankey-wrap{
+  height: 300px;
+  color: var(--plot-text);
+  overflow: hidden;
+}
+
+.ws-flow #sankey-svg{
+  width: 100%;
+  height: 100%;
+}
+
+.ws-flow .flow-stats{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ws-flow .flow-stat{
+  padding: 6px 8px;
+}
+
+.ws-flow .flow-stat-label{
+  font-size: 10.5px;
+  line-height: 1.25;
+}
+
+.ws-flow .flow-stat-value{
+  font-size: 18px;
+}
+
+#sankey-title-row{
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+#sankey-title-row .sankey-title{
+  font-size: 11.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.tooltip-sub{
+  opacity: 0.75;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+/* ---------------- inspector column ---------------- */
+
+.ws-rail-right{
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+}
+
+.inspector{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.inspector-head{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.inspector-head .settings-title{
+  margin: 0;
+}
+
+.curate-block{
+  flex: none;
+}
+
+.prov-panel,
+.curation-panel{
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel-alt);
+  padding: 12px;
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.prov-panel{
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.curation-panel{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.curation-panel .form-row{
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+}
+
+.curation-panel select{
+  width: 100%;
+}
+
+.ws-button-row{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ws-button-row .btn{
+  flex: 1 1 auto;
+  font-size: 12.5px;
+  padding: 7px 10px;
+}
+
+/* ---------------- summary ---------------- */
+
+.sum-facts{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.sum-facts .prov-metric{
+  padding: 5px 7px;
+}
+
+.sum-facts .prov-metric-value{
+  font-size: 14px;
+}
+
+.sum-converged{
+  margin-top: 6px;
+}
+
+.sum-bar{
+  display: flex;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--bg-strong);
+}
+
+.sum-seg{
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: filter 0.12s ease;
+}
+
+.sum-seg:hover{
+  filter: brightness(1.12);
+}
+
+.sum-rows{
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 8px;
+}
+
+.sum-row,
+.sum-hist-row,
+.sum-attention-row{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  padding: 4px 6px;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.sum-row:hover,
+.sum-hist-row:not([disabled]):hover,
+.sum-attention-row:hover{
+  background: var(--bg-strong);
+}
+
+.sum-hist-row[disabled]{
+  cursor: default;
+  opacity: 0.55;
+}
+
+.sum-row-label{
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sum-row-value,
+.sum-hist-value{
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+.sum-hist{
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sum-hist-label{
+  width: 58px;
+  flex: none;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sum-hist-track{
+  flex: 1;
+  min-width: 0;
+  height: 9px;
+  border-radius: 5px;
+  background: var(--bg-strong);
+  overflow: hidden;
+}
+
+.sum-hist-fill{
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+}
+
+.sum-inline-link{
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 8px;
+  font: inherit;
+  font-size: 10.5px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.sum-inline-link:hover{
+  text-decoration: underline;
+}
+
+.sum-attention{
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sum-attention-row{
+  justify-content: space-between;
+}
+
+.sum-attention-id{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--accent);
+}
+
+.sum-attention-reason{
+  flex: none;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ---------------- per-contig record ---------------- */
+
+.prov-empty{
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.prov-head{
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.prov-id{
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.prov-stage{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.prov-swatch{
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  flex: none;
+  margin-right: 6px;
+}
+
+.prov-explain{
+  margin: 0 0 10px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.prov-rejected{
+  border-left: 3px solid var(--accent-2);
+  padding-left: 8px;
+  color: var(--text);
+}
+
+.prov-metrics{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.prov-metric{
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+.prov-metric-label{
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.prov-metric-value{
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.prov-section-title{
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 12px 0 6px;
+  font-weight: 600;
+}
+
+.prov-table{
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.prov-table td{
+  padding: 3px 0;
+  vertical-align: middle;
+}
+
+.prov-table td:first-child{
+  color: var(--muted);
+  padding-right: 8px;
+  white-space: nowrap;
+}
+
+.prov-bars{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prov-bar-row{
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px 34px;
+  align-items: center;
+  gap: 6px;
+}
+
+.prov-bar-label{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prov-bar-track{
+  background: var(--bg-strong);
+  border-radius: 4px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.prov-bar-fill{
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+}
+
+.prov-bar-value{
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.prov-note{
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.prov-support{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.prov-support li{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.prov-link{
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prov-link:hover{
+  text-decoration: underline;
+}
+
+.prov-support-weight{
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+.prov-highlight{
+  margin-top: 8px;
+  width: 100%;
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+.override-summary{
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ---------------- sequential legend ramp ---------------- */
+
+.legend-ramp{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.legend-ramp-bar{
+  height: 10px;
+  border-radius: 5px;
+  border: 1px solid var(--plot-border);
+}
+
+.legend-ramp-labels{
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.bin-legend-swatch.legend-changed{
+  background: transparent;
+  border-width: 2px;
+  border-style: solid;
+}
+
+
+/* ---------------- responsive ---------------- */
+
+@media (min-width: 1440px){
+  .app{
+    max-width: 1560px;
+  }
+}
+
+@media (max-width: 1180px){
+  .workspace{
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ws-rail-right{
+    position: static;
+    max-height: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+
+  .prov-panel{
+    max-height: 520px;
+  }
+}
+
+@media (max-width: 900px){
+  .ws-rail-right{
+    grid-template-columns: 1fr;
+  }
+
+  .ws-bottom{
+    grid-template-columns: 1fr;
+  }
+
+  .workspace #graph-canvas,
+  .workspace.bottom-hidden #graph-canvas{
+    height: 460px;
+  }
+
+  .tb-actions{
+    margin-left: 0;
+  }
+
+  .tb-selection{
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .legend-overlay{
+    width: 150px;
+  }
+}

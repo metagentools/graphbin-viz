@@ -12,6 +12,8 @@ from bidictmap import BidirectionalMap
 # IMPORTANT: reuse the exact colour generator used by spades_plot.py
 from spades_plot import generate_distinct_colours
 
+import export_common
+
 
 # -----------------------------
 # helpers copied/aligned from spades_plot.py
@@ -237,12 +239,38 @@ def _load_layout_coords(path):
 # MAIN EXPORT FUNCTION
 # -----------------------------
 
+def _node_id_for_contig_label(label):
+    """Map a GraphBin contig name (NODE_n_length_...) onto the graph node id."""
+    try:
+        return "NODE_" + str(_extract_contig_num(label))
+    except Exception:
+        return None
+
+
+def _read_binning_by_node(path, delimiter):
+    """Read a binning result keyed by interactive-graph node id."""
+    bins = {}
+    for contig_label, bin_label in export_common.read_binning_rows(path, delimiter):
+        node_id = _node_id_for_contig_label(contig_label)
+        if node_id is not None:
+            bins[node_id] = bin_label
+    return bins
+
+
+def _extra_colour(index):
+    """Deterministic colours for bins that only appear in additional results."""
+    hue = (0.13 + 0.37 * index) % 1.0
+    import colorsys
+
+    r, g, b = colorsys.hsv_to_rgb(hue, 0.45, 0.85)
+    return "#%02x%02x%02x" % (int(r * 255), int(g * 255), int(b * 255))
+
+
 def export(args_ns: SimpleNamespace, out_json="/out/interactive_graph.json"):
     gfa = args_ns.graph
     paths_file = args_ns.paths
     contigs_fasta = args_ns.contigs
     initial_path = args_ns.initial
-    final_path = args_ns.final
     delimiter = args_ns.delimiter
     output_path = getattr(args_ns, "output", "")
     prefix = getattr(args_ns, "prefix", "")
@@ -253,9 +281,12 @@ def export(args_ns: SimpleNamespace, out_json="/out/interactive_graph.json"):
     g = _build_graph(node_count, contigs_map, contigs_map_rev,
                      paths, segment_contigs, links_map)
 
-    # bins
-    initial_bins = _read_binning(initial_path, delimiter, contigs_map_rev)
-    final_bins = _read_binning(final_path, delimiter, contigs_map_rev)
+    # --- every binning result being compared, in display order ---
+    specs = export_common.build_result_specs(args_ns)
+    bins_by_result = {
+        spec["key"]: _read_binning_by_node(spec["path"], spec["delimiter"])
+        for spec in specs
+    }
 
     # lengths + GC + coverage
     lengths, gcs, covs = _read_fasta_len_gc(contigs_fasta, contigs_map_rev)
@@ -280,6 +311,15 @@ def export(args_ns: SimpleNamespace, out_json="/out/interactive_graph.json"):
         ambiguous_multi_path = f"{output_path}{prefix}graphbin_ambiguous.csv"
     ambiguous_multi = _read_ambiguous_multi(ambiguous_multi_path, contigs_map_rev)
 
+    # --- decision provenance recorded during refinement ---
+    provenance_path = getattr(args_ns, "provenance", None)
+    if not provenance_path:
+        provenance_path = f"{output_path}{prefix}graphbin_provenance.json"
+    provenance, provenance_meta = export_common.load_provenance(
+        provenance_path, _node_id_for_contig_label
+    )
+    provenance_meta["max_iteration"] = export_common.max_iteration_in(provenance)
+
     # --- EXACT SAME BIN COLOURS AS PNG PLOTS ---
     all_bins = []
     with open(initial_path, "r", encoding="utf-8", errors="ignore") as f:
@@ -292,13 +332,18 @@ def export(args_ns: SimpleNamespace, out_json="/out/interactive_graph.json"):
     colours = generate_distinct_colours(len(bins_list))
     bin_colors = {bins_list[i]: colours[i] for i in range(len(bins_list))}
 
+    # bins that only occur in additional results still need a stable colour
+    extra_index = 0
+    for key in bins_by_result:
+        for bin_label in sorted(set(bins_by_result[key].values())):
+            if bin_label and bin_label not in bin_colors:
+                bin_colors[bin_label] = _extra_colour(extra_index)
+                extra_index += 1
+
     # nodes
     nodes = []
     for v in range(node_count):
         node_id = "NODE_" + str(contigs_map[v])
-        init_bin = initial_bins.get(v)
-        fin_bin = final_bins.get(v)
-        changed = init_bin != fin_bin
 
         if layout_coords and node_id in layout_coords:
             coord = layout_coords[node_id]
@@ -310,20 +355,27 @@ def export(args_ns: SimpleNamespace, out_json="/out/interactive_graph.json"):
             x = float(fallback_layout.coords[v][0])
             y = float(fallback_layout.coords[v][1])
 
-        nodes.append({
+        node = {
             "id": node_id,
             "x": x,
             "y": y,
             "len": int(lengths.get(v, 0)),
             "gc": float(gcs[v]) if v in gcs and gcs[v] is not None else None,
-            "initial_bin": init_bin,
-            "final_bin": fin_bin,
-            "changed": changed,
             "degree": int(deg[v]),
             "cov": float(covs[v]) if v in covs and covs[v] is not None else None,
             "misbinned": v in misbinned,
             "ambiguous_multi": v in ambiguous_multi,
-        })
+        }
+
+        export_common.attach_comparison(
+            node, {k: bins_by_result[k].get(node_id) for k in bins_by_result}, specs
+        )
+
+        record = provenance.get(node_id)
+        if record:
+            node["prov"] = record
+
+        nodes.append(node)
 
     # edges (use NODE_ ids, not vertex indices)
     edges = [
@@ -331,12 +383,10 @@ def export(args_ns: SimpleNamespace, out_json="/out/interactive_graph.json"):
         for (u, v) in g.get_edgelist()
     ]
 
-    out = {
-        "nodes": nodes,
-        "edges": edges,
-        "bin_colors": bin_colors,        # EXACT match to PNG plots
-        "unbinned_color": "#d3d3d3"         # same as spades_plot.py
-    }
+    out = export_common.build_export(
+        nodes, edges, specs, bin_colors, provenance_meta,
+        unbinned_color="#d3d3d3",   # same as spades_plot.py
+    )
 
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump(out, f)

@@ -105,6 +105,8 @@ export default function App() {
       frame = requestAnimationFrame(() => {
         window.dispatchEvent(new Event("resize"));
         syncFlowPanelHeight();
+        // the workspace canvases can only be measured once visible
+        window.dispatchEvent(new Event("graphbin-viz:workspace-shown"));
       });
     }
 
@@ -277,6 +279,24 @@ export default function App() {
                 </div>
                 <div className="control">
                   <input id="initial" type="file" accept=".csv,.tsv" />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="label-with-help">
+                  <label htmlFor="extra-results">Other binning results</label>
+                  <details className="help" role="group">
+                    <summary aria-label="Other binning results help">?</summary>
+                    <span className="help-tooltip" role="tooltip">
+                      Optional. Additional binning results (CSV/TSV, one file per
+                      tool) over the same assembly. Each becomes another column in
+                      the comparison, so you can see where several binners agree,
+                      disagree, or are contradicted by the assembly graph.
+                    </span>
+                  </details>
+                </div>
+                <div className="control">
+                  <input id="extra-results" type="file" accept=".csv,.tsv" multiple />
                 </div>
               </div>
 
@@ -474,7 +494,7 @@ export default function App() {
               aria-controls="panel-output"
               onClick={() => setActiveTab("output")}
             >
-              Output + Plots
+              Run log &amp; exports
             </button>
             <button
               id="tab-interactive"
@@ -485,24 +505,364 @@ export default function App() {
               aria-controls="panel-interactive"
               onClick={() => setActiveTab("interactive")}
             >
-              Interactive View
-            </button>
-            <button
-              id="tab-flow"
-              className={`tab-btn ${activeTab === "flow" ? "active" : ""}`}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "flow"}
-              aria-controls="panel-flow"
-              onClick={() => setActiveTab("flow")}
-            >
-              Contig Flow
+              Workspace
             </button>
           </div>
         </div>
 
         <div className="tab-panels">
-            <div
+          <div
+            id="panel-interactive"
+            className={`tab-panel ${activeTab === "interactive" ? "active" : ""}`}
+            role="tabpanel"
+            aria-labelledby="tab-interactive"
+          >
+            <div className="workspace" id="workspace">
+              <div className="ws-main">
+                <div className="ws-main-head">
+                  <span id="graph-view-title" className="settings-title">
+                    Assembly graph
+                  </span>
+                  <button id="toggle-bottom-row" className="ws-linkbtn" type="button">
+                    Hide lower views
+                  </button>
+                </div>
+
+                {/* ---------- toolbar: encoding + filtering ---------- */}
+                <div className="ws-toolbar">
+                  <div className="tb-row">
+                    <div className="tb-field">
+                      <label htmlFor="view-mode">Result</label>
+                      <select id="view-mode" defaultValue="r0"></select>
+                    </div>
+
+                    <div className="tb-field">
+                      <label htmlFor="color-mode">Colour by</label>
+                      <select id="color-mode" defaultValue="bin">
+                        <option value="bin">Bin assignment</option>
+                        <option value="confidence">Refinement confidence</option>
+                        <option value="disagreement">Cross-result disagreement</option>
+                        <option value="stage">Decision stage</option>
+                        <option value="cov">Coverage</option>
+                        <option value="gc">GC content</option>
+                        <option value="len">Contig length</option>
+                      </select>
+                    </div>
+
+                    <div className="tb-field">
+                      <label htmlFor="size-mode">Size by</label>
+                      <select id="size-mode" defaultValue="uniform">
+                        <option value="uniform">Uniform</option>
+                        <option value="len">Contig length</option>
+                        <option value="cov">Coverage</option>
+                        <option value="degree">Degree</option>
+                      </select>
+                    </div>
+
+                    <div className="tb-field">
+                      <label htmlFor="bin-filter">Show only bin</label>
+                      <select id="bin-filter">
+                        <option value="">(all bins)</option>
+                      </select>
+                    </div>
+
+                    <div className="tb-field tb-field-range">
+                      <label htmlFor="node-size">Node size</label>
+                      <div className="range-row">
+                        <input
+                          id="node-size"
+                          type="range"
+                          min="2"
+                          max="16"
+                          step="0.5"
+                          defaultValue="5.5"
+                        />
+                        <span id="node-size-value" className="range-value">
+                          5.5
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="tb-actions">
+                      <button id="reset-view" className="btn secondary tb-btn" type="button">
+                        Reset view
+                      </button>
+                      <button
+                        id="clear-selection"
+                        className="btn secondary tb-btn"
+                        type="button"
+                      >
+                        Clear selection
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="tb-row tb-row-chips" role="group" aria-label="Filters">
+                    <span className="tb-chip-label">Show</span>
+                    <label className="chip">
+                      <input id="toggle-only-changed" type="checkbox" />
+                      <span>Changed</span>
+                    </label>
+                    <label className="chip">
+                      <input id="toggle-only-disputed" type="checkbox" />
+                      <span>Disputed</span>
+                    </label>
+                    <label className="chip">
+                      <input id="toggle-low-confidence" type="checkbox" />
+                      <span>Low confidence</span>
+                    </label>
+
+                    <span className="tb-chip-sep" aria-hidden="true"></span>
+
+                    <label className="chip">
+                      <input id="toggle-hide-unbinned" type="checkbox" />
+                      <span>Hide unbinned</span>
+                    </label>
+                    <label className="chip">
+                      <input id="toggle-hide-isolated" type="checkbox" />
+                      <span>Hide isolated</span>
+                    </label>
+
+                    <span className="tb-chip-sep" aria-hidden="true"></span>
+                    <span className="tb-chip-label">Mark</span>
+
+                    <label className="chip">
+                      <input id="toggle-mark-changed" type="checkbox" />
+                      <span>Changed between results</span>
+                    </label>
+                    <label className="chip">
+                      <input id="toggle-mark-misbinned" type="checkbox" />
+                      <span>Likely misbinned</span>
+                    </label>
+                    <label className="chip">
+                      <input id="toggle-mark-ambiguous" type="checkbox" />
+                      <span>Ambiguous</span>
+                    </label>
+
+                    <span id="selection-summary" className="tb-selection"></span>
+                  </div>
+                </div>
+
+                {/* ---------- graph ---------- */}
+                <div className="ws-graph">
+                  <div className="interactive-canvas-wrap">
+                    <canvas id="graph-canvas" width="900" height="640"></canvas>
+                    <div
+                      id="hover-tooltip"
+                      className="tooltip"
+                      style={{ display: "none" }}
+                    ></div>
+                    <div id="legend-overlay" className="legend-overlay">
+                      <button
+                        id="legend-toggle"
+                        className="legend-overlay-head"
+                        type="button"
+                        aria-expanded="true"
+                        aria-controls="bin-legend"
+                      >
+                        Legend
+                      </button>
+                      <div id="bin-legend" className="bin-legend"></div>
+                    </div>
+                  </div>
+
+                  <div className="replay-bar">
+                    <span className="replay-label">Propagation replay</span>
+                    <button id="replay-play" className="btn tertiary" type="button">
+                      Play
+                    </button>
+                    <input
+                      id="replay-slider"
+                      type="range"
+                      min="0"
+                      max="0"
+                      step="1"
+                      defaultValue="0"
+                      disabled
+                    />
+                    <span id="replay-value" className="range-value">
+                      off
+                    </span>
+                    <label className="replay-speed" htmlFor="replay-speed">
+                      <span>Speed</span>
+                      <select id="replay-speed" defaultValue="600">
+                        <option value="1600">Very slow</option>
+                        <option value="1000">Slow</option>
+                        <option value="600">Normal</option>
+                        <option value="280">Fast</option>
+                      </select>
+                    </label>
+                    <span id="replay-hint" className="replay-hint">
+                      Step through how labels spread outwards from the seeds.
+                    </span>
+                  </div>
+                </div>
+
+                {/* ---------- linked lower views ---------- */}
+                <div className="ws-bottom" id="ws-bottom">
+                  <div className="ws-view ws-scatter">
+                    <div className="ws-view-header">
+                      <span className="ws-view-title">Feature space</span>
+                      <div className="ws-view-controls">
+                        <select id="scatter-x" defaultValue="gc">
+                          <option value="gc">GC %</option>
+                          <option value="cov">Coverage</option>
+                          <option value="len">Length</option>
+                          <option value="confidence">Confidence</option>
+                        </select>
+                        <select id="scatter-y" defaultValue="cov">
+                          <option value="cov">Coverage</option>
+                          <option value="gc">GC %</option>
+                          <option value="len">Length</option>
+                          <option value="confidence">Confidence</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="scatter-wrap">
+                      <svg
+                        id="feature-scatter"
+                        role="img"
+                        aria-label="Contig feature scatter plot, brushable"
+                      ></svg>
+                      <div
+                        id="scatter-tooltip"
+                        className="tooltip"
+                        style={{ display: "none" }}
+                      ></div>
+                    </div>
+                    <div className="ws-view-note">
+                      Drag to brush contigs; the graph and flow view follow.
+                    </div>
+                  </div>
+
+                  <div className="ws-view ws-flow">
+                    <div className="ws-view-header">
+                      <span className="ws-view-title">Contig flow between results</span>
+                      <div className="ws-view-controls">
+                        <label className="cb">
+                          <input id="sankey-only-changed" type="checkbox" />
+                          <span className="cb-box" aria-hidden="true"></span>
+                          <span className="cb-text">Only changed</span>
+                        </label>
+                        <label className="cb">
+                          <input id="sankey-hide-unbinned" type="checkbox" />
+                          <span className="cb-box" aria-hidden="true"></span>
+                          <span className="cb-text">Hide unbinned</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="flow-stats">
+                      <div className="flow-stat">
+                        <div className="flow-stat-label">Changed bin</div>
+                        <div id="flow-stat-changed" className="flow-stat-value">—</div>
+                      </div>
+                      <div className="flow-stat">
+                        <div className="flow-stat-label">Re-assigned</div>
+                        <div id="flow-stat-reassigned" className="flow-stat-value">—</div>
+                      </div>
+                      <div className="flow-stat">
+                        <div className="flow-stat-label">Newly binned</div>
+                        <div
+                          id="flow-stat-unbinned-to-binned"
+                          className="flow-stat-value"
+                        >
+                          —
+                        </div>
+                      </div>
+                      <div className="flow-stat">
+                        <div className="flow-stat-label">Unbinned</div>
+                        <div
+                          id="flow-stat-binned-to-unbinned"
+                          className="flow-stat-value"
+                        >
+                          —
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="sankey-wrap">
+                      <div className="sankey-title-row" id="sankey-title-row"></div>
+                      <svg
+                        id="sankey-svg"
+                        role="img"
+                        aria-label="Flow diagram showing contig bin changes between results"
+                      ></svg>
+                      <div
+                        id="sankey-tooltip"
+                        className="tooltip"
+                        style={{ display: "none" }}
+                      ></div>
+                    </div>
+                    <div className="ws-view-note">
+                      Click a flow to select those contigs in every view.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ---------- inspector + curation ---------- */}
+              <aside className="ws-rail ws-rail-right">
+                <div className="inspector">
+                  <div className="inspector-head">
+                    <span id="inspector-title" className="settings-title">
+                      Refinement summary
+                    </span>
+                    <button
+                      id="inspector-back"
+                      className="ws-linkbtn"
+                      type="button"
+                      hidden
+                    >
+                      Back to summary
+                    </button>
+                  </div>
+                  <div id="prov-panel" className="prov-panel">
+                    <div className="prov-empty">
+                      Run a dataset to see how refinement decided each contig&rsquo;s bin.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="curate-block">
+                  <div className="settings-title">Curate</div>
+                  <div id="curation-panel" className="curation-panel">
+                    <div className="form-row">
+                      <label htmlFor="override-bin">Assign selected to</label>
+                      <div className="control">
+                        <select id="override-bin"></select>
+                      </div>
+                    </div>
+                    <div className="ws-button-row">
+                      <button id="apply-override" className="btn secondary" type="button">
+                        Lock assignment
+                      </button>
+                      <button id="clear-overrides" className="btn secondary" type="button">
+                        Clear locks
+                      </button>
+                    </div>
+                    <div id="override-summary" className="override-summary">
+                      No locked assignments.
+                    </div>
+                    <div className="ws-button-row">
+                      <button id="rerun-refinement" className="btn primary" type="button">
+                        Re-run refinement
+                      </button>
+                      <button id="export-curated" className="btn tertiary" type="button">
+                        Export binning
+                      </button>
+                    </div>
+                    <div className="ws-view-note">
+                      Locked contigs are treated as fixed seeds, so refinement is
+                      re-run under your correction rather than around it.
+                    </div>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </div>
+
+          <div
             id="panel-output"
             className={`tab-panel ${activeTab === "output" ? "active" : ""}`}
             role="tabpanel"
@@ -542,11 +902,19 @@ export default function App() {
 
             <div className="tab-section">
               <div className="section-header">
-                <h2>Plots</h2>
+                <h2>Static plots</h2>
+              </div>
+              <div className="ws-view-note plots-note">
+                Publication-ready renderings of the same layout used in the
+                workspace, for export.
               </div>
               <div id="section-plots" className="section-body">
                 <div id="plots-row">
-                  <div className="plot-block" id="initial-block" style={{ display: "none" }}>
+                  <div
+                    className="plot-block"
+                    id="initial-block"
+                    style={{ display: "none" }}
+                  >
                     <img id="initial-img" alt="Initial binning plot" />
                     <iframe
                       id="initial-pdf"
@@ -559,7 +927,11 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div className="plot-block" id="final-block" style={{ display: "none" }}>
+                  <div
+                    className="plot-block"
+                    id="final-block"
+                    style={{ display: "none" }}
+                  >
                     <img id="final-img" alt="GraphBin binning plot" />
                     <iframe
                       id="final-pdf"
@@ -572,193 +944,6 @@ export default function App() {
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <div
-            id="panel-interactive"
-            className={`tab-panel ${activeTab === "interactive" ? "active" : ""}`}
-            role="tabpanel"
-            aria-labelledby="tab-interactive"
-          >
-            <h2>Interactive View</h2>
-
-            <div className="interactive-grid">
-              <div className="interactive-controls">
-                <div className="form-grid">
-                  <div className="form-row">
-                  <label htmlFor="view-mode">Binning to display</label>
-                    <div className="control">
-                      <select id="view-mode" defaultValue="initial">
-                        <option value="initial">Initial</option>
-                        <option value="final">GraphBin</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <label htmlFor="bin-filter">Show only bin</label>
-                    <div className="control">
-                      <select id="bin-filter">
-                        <option value="">(all bins)</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <label htmlFor="toggle-hide-unbinned">Hide unbinned contigs</label>
-                    <div className="control">
-                      <label className="cb">
-                        <input id="toggle-hide-unbinned" type="checkbox" />
-                        <span className="cb-box" aria-hidden="true"></span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <label htmlFor="toggle-only-changed">Show only changed</label>
-                    <div className="control">
-                      <label className="cb">
-                        <input id="toggle-only-changed" type="checkbox" />
-                        <span className="cb-box" aria-hidden="true"></span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <label htmlFor="toggle-hide-isolated">Hide isolated contigs</label>
-                    <div className="control">
-                      <label className="cb">
-                        <input id="toggle-hide-isolated" type="checkbox" />
-                        <span className="cb-box" aria-hidden="true"></span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <label htmlFor="toggle-show-ambiguous">Highlight ambiguous contigs</label>
-                    <div className="control">
-                      <label className="cb">
-                        <input id="toggle-show-ambiguous" type="checkbox" />
-                        <span className="cb-box" aria-hidden="true"></span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <label htmlFor="node-size">Node size</label>
-                    <div className="control">
-                      <div className="range-row">
-                        <input
-                          id="node-size"
-                          type="range"
-                          min="2"
-                          max="16"
-                          step="0.5"
-                          defaultValue="5.5"
-                        />
-                        <span id="node-size-value" className="range-value">
-                          5.5
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <label></label>
-                    <div className="control">
-                      <button id="reset-view" className="btn secondary">
-                        Reset view
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="legend-hint">
-                  <div>
-                    <b>Controls</b>
-                  </div>
-                  <div>Wheel: zoom</div>
-                  <div>Drag: pan</div>
-                  <div>Hover: tooltip</div>
-                  <div>Click: lock selection</div>
-                </div>
-
-                <div className="settings-title legend-title">Bin legend</div>
-                <div id="bin-legend" className="bin-legend"></div>
-              </div>
-
-              <div className="interactive-canvas-wrap">
-                <canvas id="graph-canvas" width="900" height="700"></canvas>
-                <div id="hover-tooltip" className="tooltip" style={{ display: "none" }}></div>
-              </div>
-            </div>
-          </div>
-
-          <div
-            id="panel-flow"
-            className={`tab-panel ${activeTab === "flow" ? "active" : ""}`}
-            role="tabpanel"
-            aria-labelledby="tab-flow"
-          >
-            <h2>Contig flow between binnings</h2>
-
-            <div className="flow-body">
-              <div className="flow-stats">
-                <div className="flow-stat">
-                  <div className="flow-stat-label">Total contigs that changed bin</div>
-                  <div id="flow-stat-changed" className="flow-stat-value">—</div>
-                </div>
-                <div className="flow-stat">
-                  <div className="flow-stat-label">Number of contigs re-assigned (Likely misbinned)</div>
-                  <div id="flow-stat-reassigned" className="flow-stat-value">—</div>
-                </div>
-                <div className="flow-stat">
-                  <div className="flow-stat-label">Number of initially unbinned contigs binned</div>
-                  <div id="flow-stat-unbinned-to-binned" className="flow-stat-value">—</div>
-                </div>
-                <div className="flow-stat">
-                  <div className="flow-stat-label">Number of initially binned contigs unbinned</div>
-                  <div id="flow-stat-binned-to-unbinned" className="flow-stat-value">—</div>
-                </div>
-              </div>
-
-              <div className="sankey-controls">
-                <div className="sankey-controls-left">
-                  <label className="cb">
-                    <input id="sankey-only-changed" type="checkbox" />
-                    <span className="cb-box" aria-hidden="true"></span>
-                    <span className="cb-text">Only contigs that changed bin</span>
-                  </label>
-
-                  <label className="cb">
-                    <input id="sankey-hide-unbinned" type="checkbox" />
-                    <span className="cb-box" aria-hidden="true"></span>
-                    <span className="cb-text">Hide unbinned</span>
-                  </label>
-                </div>
-
-                <div className="sankey-controls-right">
-                  <div className="sankey-hint">Click a flow to highlight it.</div>
-                </div>
-              </div>
-
-              <div className="sankey-wrap">
-                <div className="sankey-title-row">
-                  <div id="sankey-left-title" className="sankey-title">
-                    Binning 1
-                  </div>
-                  <div id="sankey-right-title" className="sankey-title">
-                    Binning 2
-                  </div>
-                </div>
-                <svg
-                  id="sankey-svg"
-                  role="img"
-                  aria-label="Sankey diagram showing contig bin changes"
-                ></svg>
-                <div id="sankey-tooltip" className="tooltip" style={{ display: "none" }}></div>
               </div>
             </div>
           </div>
