@@ -32,59 +32,95 @@ No installation needed! Python **not required**. Node.js **not required**. You o
 * Upload initial binning result and assembly files
 * Adjust GraphBin settings
 
-### Static Graph Plots
+### Coordinated workspace
 
-* Run GraphBin plotting fully in the browser using WebAssembly
-* Adjustable plot settings:
-  * DPI
-  * Width / height
-  * Vertex size
-  * Label size
-  * Image type
-* Automatically renders:
-  * Initial binning plot
-  * GraphBin-refined binning plot
+The assembly graph, the contig feature space and the flow between binning
+results are shown **together** in a single workspace and share one selection.
+Brushing contigs in the feature space, clicking a flow, or clicking a contig in
+the graph highlights the same contigs everywhere, so a group of interest can be
+followed between graph structure and sequence composition without losing it.
+
+Encoding and filtering sit in a toolbar above the graph rather than in a side
+rail, the legend sits on the graph it explains, and the lower views collapse so
+the graph can take the full panel.
+
+### Where to start on a fresh result
+
+With nothing selected, the inspector summarises the run rather than sitting
+empty: how many contigs refinement kept, inferred or unlabelled; the confidence
+distribution of the refined assignments; and a **needs attention** list of the
+contigs the results disagree about or that were decided with the least support.
+Every part of it is a way in - clicking a stage, a confidence band or a listed
+contig selects it across all three views.
+
+### Decision provenance: why a contig ended up where it did
+
+GraphBin-Viz records how every contig's bin was decided during refinement, and
+reports it per contig:
+
+* **Decision stage** - whether the initial label was kept as a propagation seed,
+  removed because the graph neighbourhood contradicted it, inferred by label
+  propagation, or never resolvable
+* **Rejected initial labels** - if a contig's original bin was contradicted and
+  later re-inferred, the rejection and its reason are still shown
+* **Supporting contigs** - the labelled neighbours that contributed to the
+  winning score, with their weights, each selectable in the graph
+* **Competing bins** - the full score distribution, the winning margin, and the
+  neighbourhood entropy
+* **Distance to evidence** - hop distance to the nearest seeded contig
+* **Propagation replay** - a slider and play control that step through label
+  propagation so you can watch labels spread outwards from the seeds, iteration
+  by iteration, at an adjustable speed. During playback the markers that
+  describe the *finished* result (what changed, GraphBin's flags) are hidden,
+  so the only thing moving is the labels themselves
+
+### Confidence and disagreement as first-class encodings
+
+* A per-contig **confidence** combining the vote margin with distance decay, so a
+  label carried a long way through the graph is trusted less
+* Contigs can be coloured by **refinement confidence**, **cross-result
+  disagreement**, **decision stage**, or any sequence feature; under the
+  confidence channel the least well-supported assignments are the ones that
+  stand out
+* Filters for **only disputed** and **only low confidence** contigs, to go
+  straight to the parts of the assembly worth checking
+
+### Comparing any number of binning results
+
+GraphBin is treated as one labelled result among several rather than as the
+final answer. Supply additional binning results over the same assembly
+(one CSV/TSV per tool) and GraphBin-Viz will:
+
+* Add each as another column in the graph view, the flow diagram and the
+  per-contig record
+* Compute per-contig **consensus** and **disagreement** across all results
+* Render a multi-stage flow diagram across every result in order
+
+### Curation: correct an assignment and re-run refinement
+
+Assignments are not read-only. Select contigs, lock them to a bin, and re-run
+refinement: locked contigs are treated as **fixed seeds**, so the correction
+propagates through the assembly graph rather than being a cosmetic relabelling
+of one contig. The curated binning can be exported as CSV.
+
+### Contig feature space
+
+* Node size by contig length, coverage or degree
+* A brushable GC x coverage scatter (also length and confidence) linked to the
+  graph, so composition-based and graph-based views of the same contigs can be
+  compared directly
+
+### Static plots
+
+* Publication-ready renderings of the same layout used in the workspace
+* Adjustable plot settings: DPI, width / height, vertex size, label size, image type
 * Download generated plots
-
-### Interactive Assembly Graph Visualisation
-
-* Interactive assembly graph with binning results
-* Hover tooltips per contig showing:
-  * Contig ID
-  * Length
-  * GC content
-  * Coverage
-  * Degree
-  * Bin assignments
-  * Likely misbinned or ambigous
-* Zoom, pan, and explore complex graphs visually
-* Toggle visibility of bins and contigs
-* Designed for exploratory analysis and quality assessment
-
-### Binning Comparison Sankey Diagram
-
-* Sankey diagram showing how contigs move between:
-  * Initial binning results
-  * GraphBin-refined binning results
-* Each flow represents the number of contigs transferred between bins
-* Unbinned contigs are shown explicitly (light grey) to highlight recovery or loss
-* Supports interactive exploration:
-  * Hover to inspect contig flow between specific bins
-  * Click to lock/highlight a bin-to-bin transition
-* Filters to:
-  * Show only contigs that changed bin
-  * Hide unbinned contigs
-* Automatically updates when new binning results are plotted
-
-This view provides a high-level summary of bin refinement behavior, complementing the detailed interactive assembly graph.
-
 
 ### General
 
 * Built-in test data for instant demonstration
 * Client-side file handling - your data never leaves your computer
 * Pure static site - works on GitHub Pages
-
 
 ## Technologies Used
 
@@ -119,6 +155,18 @@ Then copy and paste the link shown as "Local:" in your web browser. It will look
 ```shell
 http://localhost:4173/graphbin-viz/
 ```
+
+## Running the Tests
+
+```shell
+npm run test:unit                          # component tests (Vitest)
+npm run test:e2e                           # workspace tests (Playwright)
+python3 -m unittest discover -s tests/python   # refinement + provenance tests
+```
+
+The Python tests cover label propagation provenance, the confidence and
+cross-result agreement calculations, and the locked-assignment path. They stand
+in a minimal graph object, so igraph is not required to run them.
 
 ## Benchmarking Different Datasets
 
