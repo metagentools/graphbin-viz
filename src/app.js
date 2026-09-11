@@ -205,7 +205,6 @@ let filters = {
   mode: "r0", // key of the binning result currently drawn in the graph
   binOnly: "", // "" = all
   hideUnbinned: false,
-  onlyChanged: false,
   hideIsolated: false,
   // Marker overlays are opt-in: a graph that arrives pre-annotated hides its
   // own structure behind rings nobody asked for.
@@ -419,12 +418,6 @@ function resetInteractiveViews() {
   const hideUnbinned = document.getElementById("toggle-hide-unbinned");
   if (hideUnbinned) {
     hideUnbinned.checked = false;
-  }
-
-  // Show only changed → unchecked
-  const onlyChanged = document.getElementById("toggle-only-changed");
-  if (onlyChanged) {
-    onlyChanged.checked = false;
   }
 
   // Node size slider → default
@@ -1513,10 +1506,15 @@ function prepareInteractiveModel(model) {
       n.bins = { r0: n.initial_bin ?? null, r1: n.final_bin ?? null };
     }
     if (n.disagreement == null) {
-      const labels = keys.map((k) => n.bins[k] ?? "(unbinned)");
-      const distinct = new Set(labels);
+      // Only results that actually binned the contig can disagree about where
+      // it belongs; one that left it unbinned expressed no opinion.
+      const assigned = keys
+        .map((k) => n.bins[k])
+        .filter((b) => b != null && b !== "");
+      const distinct = new Set(assigned);
+      n.n_assigned = assigned.length;
       n.n_distinct = distinct.size;
-      n.disagreement = distinct.size > 1 ? 1 : 0;
+      n.disagreement = assigned.length > 1 && distinct.size > 1 ? 1 : 0;
     }
   }
 
@@ -1748,13 +1746,6 @@ function initInteractiveUI() {
 
   attachControl("toggle-hide-unbinned", "change", (e) => {
     filters.hideUnbinned = e.target.checked;
-    invalidateDerived();
-    render();
-    renderScatter();
-  });
-
-  attachControl("toggle-only-changed", "change", (e) => {
-    filters.onlyChanged = e.target.checked;
     invalidateDerived();
     render();
     renderScatter();
@@ -2434,7 +2425,6 @@ function isNodeVisible(n) {
   const b = nodeBin(n, filters.mode);
 
   if (filters.hideUnbinned && (b == null || b === "")) return false;
-  if (filters.onlyChanged && !n.changed) return false;
   if (filters.onlyDisputed && nodeDisagreement(n) <= 0) return false;
   if (filters.onlyLowConfidence) {
     const u = nodeUncertainty(n);
@@ -3673,7 +3663,7 @@ function renderLegend() {
   // The marker overlays are switched on from the toolbar; the legend only
   // describes the ones currently drawn.
   if (filters.markChanged) {
-    el.appendChild(makeLegendRow("Changed between results", BRAND_BLUE, "changed"));
+    el.appendChild(makeLegendRow("Changed by refinement", BRAND_BLUE, "changed"));
   }
   if (filters.markMisbinned) {
     el.appendChild(makeLegendRow("Likely misbinned", BRAND_RED, "misbinned"));
@@ -3766,8 +3756,8 @@ function contigsNeedingAttention(limit = 10) {
     let reason;
     if (stage === "stripped") reason = "label removed";
     else if (disagreement > 0 && uncertainty != null && uncertainty >= 0.5)
-      reason = "disputed, low confidence";
-    else if (disagreement > 0) reason = "results disagree";
+      reason = "tools disagree, low confidence";
+    else if (disagreement > 0) reason = "tools disagree";
     else reason = "low confidence";
 
     scored.push({
@@ -3899,14 +3889,20 @@ function renderSummaryPanel() {
     <div class="prov-section-title">Refinement confidence</div>
     <div class="sum-hist">${confidenceRows}</div>
 
-    <div class="prov-section-title">
-      Needs attention
-      ${
-        summary.disputed.length
-          ? `<button class="sum-inline-link" id="sum-select-disputed">select all ${summary.disputed.length.toLocaleString()} disputed</button>`
-          : ""
-      }
-    </div>
+    <div class="prov-section-title">Needs attention</div>
+    ${
+      summary.disputed.length
+        ? `<div class="sum-callout">
+             <div class="sum-callout-text">
+               <span class="sum-callout-count">${summary.disputed.length.toLocaleString()}</span>
+               <span class="sum-callout-label">contigs the tools disagree on</span>
+             </div>
+             <button class="btn secondary sum-callout-btn" type="button" id="sum-select-disputed">
+               Select all
+             </button>
+           </div>`
+        : ""
+    }
     <div class="sum-attention">${attentionRows}</div>
   `;
 
@@ -3940,7 +3936,7 @@ function renderSummaryPanel() {
   const disputedBtn = document.getElementById("sum-select-disputed");
   if (disputedBtn) {
     disputedBtn.addEventListener("click", () =>
-      setSelection(summary.disputed, "results disagree")
+      setSelection(summary.disputed, "tools disagree")
     );
   }
 }

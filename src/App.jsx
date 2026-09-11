@@ -600,12 +600,8 @@ export default function App() {
                   <div className="tb-row tb-row-chips" role="group" aria-label="Filters">
                     <span className="tb-chip-label">Show</span>
                     <label className="chip">
-                      <input id="toggle-only-changed" type="checkbox" />
-                      <span>Changed</span>
-                    </label>
-                    <label className="chip">
                       <input id="toggle-only-disputed" type="checkbox" />
-                      <span>Disputed</span>
+                      <span>Tools disagree</span>
                     </label>
                     <label className="chip">
                       <input id="toggle-low-confidence" type="checkbox" />
@@ -628,7 +624,7 @@ export default function App() {
 
                     <label className="chip">
                       <input id="toggle-mark-changed" type="checkbox" />
-                      <span>Changed between results</span>
+                      <span>Changed by refinement</span>
                     </label>
                     <label className="chip">
                       <input id="toggle-mark-misbinned" type="checkbox" />

@@ -50,24 +50,29 @@ test("accepts additional binning results for comparison", () => {
   expect(input).toHaveAttribute("multiple");
 });
 
-test("offers the filters as a chip row", () => {
+test("offers the filters and markers as a chip row", () => {
   render(<App />);
 
-  // scoped to the toolbar: the flow view has its own similarly named controls
-  const toolbar = within(document.querySelector(".ws-toolbar"));
+  const toolbar = document.querySelector(".ws-toolbar");
 
-  for (const name of [
-    /^Changed$/i,
-    /^Disputed$/i,
-    /^Low confidence$/i,
-    /^Hide unbinned$/i,
-    /^Hide isolated$/i,
-    /^Changed between results$/i,
-    /^Likely misbinned$/i,
-    /^Ambiguous$/i,
+  // queried by id: the filter and the marker for the same property share a
+  // label, told apart by the SHOW / MARK group they sit in
+  for (const id of [
+    "toggle-only-disputed",
+    "toggle-low-confidence",
+    "toggle-hide-unbinned",
+    "toggle-hide-isolated",
+    "toggle-mark-changed",
+    "toggle-mark-misbinned",
+    "toggle-mark-ambiguous",
   ]) {
-    expect(toolbar.getByLabelText(name)).toBeInTheDocument();
+    const input = document.getElementById(id);
+    expect(input, id).toBeInTheDocument();
+    expect(toolbar.contains(input)).toBe(true);
   }
+
+  // "changed by refinement" is offered as a marker, not as a second filter
+  expect(document.getElementById("toggle-only-changed")).toBeNull();
 });
 
 test("puts the encoding controls in a toolbar above the graph", () => {

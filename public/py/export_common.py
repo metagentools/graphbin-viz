@@ -101,49 +101,56 @@ def _norm(label):
 def compare_assignments(bins_by_key, keys):
     """Summarise how a single contig is assigned across every result.
 
-    Returns the number of distinct labels, the fraction of result *pairs* that
-    disagree, the most frequently assigned bin, and the share of results
-    supporting it. Unbinned counts as a label of its own, so a contig that one
-    tool bins and another discards registers as a disagreement.
+    Disagreement is measured **only over the results that actually placed the
+    contig in a bin**. A tool that left it unbinned has expressed no opinion
+    about where it belongs, so counting that as a conflict would report the
+    bulk of a refinement run -- which exists to bin contigs nobody had binned
+    -- as disagreement, and drown out the cases where two tools genuinely put
+    the same contig in different bins.
+
+    Returns the number of distinct bins it was placed in, the fraction of
+    *assigning* result pairs that disagree, how many results assigned it at
+    all, the most frequently assigned bin, and the share of assigning results
+    supporting that bin.
     """
     labels = [_norm(bins_by_key.get(k)) for k in keys]
-    n = len(labels)
+    assigned = [label for label in labels if label != UNBINNED]
+    n_assigned = len(assigned)
 
-    if n == 0:
-        return {
-            "n_distinct": 0,
-            "disagreement": 0.0,
-            "consensus_bin": None,
-            "consensus_frac": 0.0,
-        }
+    empty = {
+        "n_distinct": 0,
+        "n_assigned": n_assigned,
+        "disagreement": 0.0,
+        "consensus_bin": None,
+        "consensus_frac": 0.0,
+    }
+
+    if n_assigned == 0:
+        return empty
 
     counts = {}
-    for label in labels:
+    for label in assigned:
         counts[label] = counts.get(label, 0) + 1
 
-    # fraction of unordered pairs that disagree
-    total_pairs = n * (n - 1) / 2
+    # fraction of unordered pairs of assigning results that disagree; a single
+    # assigning result has no pair to conflict with
+    total_pairs = n_assigned * (n_assigned - 1) / 2
     if total_pairs > 0:
         agreeing = sum(c * (c - 1) / 2 for c in counts.values())
         disagreement = (total_pairs - agreeing) / total_pairs
     else:
         disagreement = 0.0
 
-    # consensus prefers an actual bin over "unbinned" when they tie
-    ranked = sorted(
-        counts.items(),
-        key=lambda kv: (kv[1], kv[0] != UNBINNED),
-        reverse=True,
-    )
-    consensus_bin, consensus_count = ranked[0]
-    if consensus_bin == UNBINNED and len(ranked) > 1 and ranked[1][1] == consensus_count:
-        consensus_bin, consensus_count = ranked[1]
+    consensus_bin, consensus_count = sorted(
+        counts.items(), key=lambda kv: (kv[1], kv[0]), reverse=True
+    )[0]
 
     return {
         "n_distinct": len(counts),
+        "n_assigned": n_assigned,
         "disagreement": round(disagreement, 6),
-        "consensus_bin": None if consensus_bin == UNBINNED else consensus_bin,
-        "consensus_frac": round(consensus_count / n, 6),
+        "consensus_bin": consensus_bin,
+        "consensus_frac": round(consensus_count / n_assigned, 6),
     }
 
 

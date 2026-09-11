@@ -1868,14 +1868,17 @@ select:focus{
 
 /* ---------------- inspector column ---------------- */
 
+/* The rail stretches to the height of the graph column beside it (the grid
+   sets align-items: start, so it has to opt in). Sized by its own content it
+   stopped short, leaving the summary cramped and a gap under Curate; now the
+   summary absorbs the slack and Curate sits on the bottom edge. */
 .ws-rail-right{
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  position: sticky;
-  top: 16px;
-  max-height: calc(100vh - 32px);
+  align-self: stretch;
+  min-height: 0;
 }
 
 .inspector{
@@ -1912,6 +1915,9 @@ select:focus{
 }
 
 .prov-panel{
+  /* fill the inspector rather than sitting at its natural height, so the card
+     itself reaches down to Curate instead of leaving a gap under it */
+  flex: 1 1 auto;
   overflow-y: auto;
   min-height: 0;
 }
@@ -2061,21 +2067,48 @@ select:focus{
   border-radius: 5px;
 }
 
-.sum-inline-link{
-  background: none;
-  border: none;
-  padding: 0;
-  margin-left: 8px;
-  font: inherit;
-  font-size: 10.5px;
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--accent);
-  cursor: pointer;
+/* The count and the action that acts on it, rather than a sentence-shaped
+   link: how many contigs the results contradict each other about, and one
+   control to put all of them in the selection. */
+.sum-callout{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  background: var(--panel);
 }
 
-.sum-inline-link:hover{
-  text-decoration: underline;
+.sum-callout-text{
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.sum-callout-count{
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.sum-callout-label{
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.sum-callout-btn{
+  flex: none;
+  padding: 6px 12px;
+  font-size: 12px;
 }
 
 .sum-attention{
@@ -2342,8 +2375,7 @@ select:focus{
   }
 
   .ws-rail-right{
-    position: static;
-    max-height: none;
+    align-self: start;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 14px;
