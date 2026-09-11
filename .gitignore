@@ -13,6 +13,7 @@ public/py/graphbin/__pycache__/
 public/py/graphbin/parsers/__pycache__/
 public/py/graphbin/labelpropagation/__pycache__/
 tests/bench/__pycache__/
+tests/python/__pycache__/
 
 # Testing
 test-results/
