@@ -57,9 +57,22 @@ async function openWorkspace(page, { model = FIXTURE } = {}) {
 
   await page.goto("/");
   await page.click("#example-btn");
-  await expect
-    .poll(() => page.locator("#output").innerText(), { timeout: 60_000 })
-    .toContain("Interactive graph loaded");
+
+  // Surface a load failure straight away rather than waiting out the poll:
+  // the run log carries the real reason, and a silent 60s timeout hides it.
+  await page.waitForFunction(
+    () => {
+      const el = document.getElementById("output");
+      if (!el) return false;
+      const text = el.innerText;
+      if (/failed to load|GraphBin failed/i.test(text)) {
+        throw new Error("the app reported an error while loading:\n" + text);
+      }
+      return text.includes("Interactive graph loaded");
+    },
+    null,
+    { timeout: 60_000 }
+  );
   await page.click("#tab-interactive");
   await page.waitForTimeout(400); // the workspace re-fits once visible
   return errors;
