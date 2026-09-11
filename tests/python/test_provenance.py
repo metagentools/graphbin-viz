@@ -189,13 +189,44 @@ class CrossResultComparison(unittest.TestCase):
         )
         self.assertEqual(total["disagreement"], 1.0)
 
-    def test_unbinned_counts_as_its_own_label(self):
+    def test_unbinned_is_not_a_disagreement(self):
+        """A result that left a contig unbinned has no opinion to conflict."""
         keys = ["r0", "r1"]
-        result = export_common.compare_assignments({"r0": None, "r1": "b1"}, keys)
-        self.assertEqual(result["n_distinct"], 2)
-        self.assertEqual(result["disagreement"], 1.0)
-        # consensus prefers a real bin over "unbinned" on a tie
-        self.assertEqual(result["consensus_bin"], "b1")
+
+        # one tool bins it, the other never did: nothing to disagree about
+        newly_binned = export_common.compare_assignments({"r0": None, "r1": "b1"}, keys)
+        self.assertEqual(newly_binned["disagreement"], 0.0)
+        self.assertEqual(newly_binned["n_assigned"], 1)
+        self.assertEqual(newly_binned["consensus_bin"], "b1")
+
+        # both bin it, in different bins: a real conflict
+        conflict = export_common.compare_assignments({"r0": "b1", "r1": "b2"}, keys)
+        self.assertEqual(conflict["disagreement"], 1.0)
+        self.assertEqual(conflict["n_assigned"], 2)
+
+        # nobody binned it
+        unbinned = export_common.compare_assignments({"r0": None, "r1": None}, keys)
+        self.assertEqual(unbinned["disagreement"], 0.0)
+        self.assertEqual(unbinned["n_assigned"], 0)
+        self.assertIsNone(unbinned["consensus_bin"])
+
+    def test_disagreement_ignores_results_that_did_not_bin_it(self):
+        keys = ["r0", "r1", "r2"]
+
+        # two of three agree, the third left it unbinned: no disagreement
+        result = export_common.compare_assignments(
+            {"r0": "b1", "r1": "b1", "r2": None}, keys
+        )
+        self.assertEqual(result["disagreement"], 0.0)
+        self.assertEqual(result["n_assigned"], 2)
+        self.assertEqual(result["consensus_frac"], 1.0)
+
+        # two of three bin it differently: the pair that assigned it conflicts
+        split = export_common.compare_assignments(
+            {"r0": "b1", "r1": "b2", "r2": None}, keys
+        )
+        self.assertEqual(split["disagreement"], 1.0)
+        self.assertEqual(split["n_assigned"], 2)
 
     def test_result_specs_accept_extra_binning_results(self):
         from types import SimpleNamespace

@@ -411,12 +411,12 @@ test("marker overlays are off until switched on from the toolbar", async ({ page
     await expect(page.locator(`#${id}`)).not.toBeChecked();
   }
   await expect(page.locator("#bin-legend")).not.toContainText(
-    "Changed between results"
+    "Changed by refinement"
   );
 
   await toggle("toggle-mark-changed");
   await expect(page.locator("#toggle-mark-changed")).toBeChecked();
-  await expect(page.locator("#bin-legend")).toContainText("Changed between results");
+  await expect(page.locator("#bin-legend")).toContainText("Changed by refinement");
 
   await toggle("toggle-mark-misbinned");
   await expect(page.locator("#bin-legend")).toContainText("Likely misbinned");
@@ -424,7 +424,7 @@ test("marker overlays are off until switched on from the toolbar", async ({ page
   await toggle("toggle-mark-changed");
   await expect(page.locator("#toggle-mark-changed")).not.toBeChecked();
   await expect(page.locator("#bin-legend")).not.toContainText(
-    "Changed between results"
+    "Changed by refinement"
   );
   // the other marker is untouched
   await expect(page.locator("#bin-legend")).toContainText("Likely misbinned");
@@ -453,6 +453,52 @@ test("replay is available only on the result propagation produced", async ({ pag
   await page.selectOption("#view-mode", { label: "Initial" });
   await expect(page.locator("#replay-value")).toHaveText("final");
   await expect(page.locator("#replay-slider")).toBeDisabled();
+
+  expect(errors).toEqual([]);
+});
+
+test("filtering asks about disagreement; refinement changes are a marker", async ({
+  page,
+}) => {
+  const errors = await openWorkspace(page);
+
+  // one filter for the cross-result question
+  await expect(
+    page.locator("label.chip:has(#toggle-only-disputed)")
+  ).toBeVisible();
+  // and no second filter repeating what the marker already offers
+  await expect(page.locator("#toggle-only-changed")).toHaveCount(0);
+  await expect(
+    page.locator("label.chip:has(#toggle-mark-changed)")
+  ).toBeVisible();
+
+  await page.locator("label.chip:has(#toggle-only-disputed) span").click();
+  await expect(page.locator("#toggle-only-disputed")).toBeChecked();
+
+  expect(errors).toEqual([]);
+});
+
+test("a contig left unbinned by one result is not counted as a disagreement", async ({
+  page,
+}) => {
+  // NODE_12 is binned only by GraphBin and OtherBinner, and they agree; it is
+  // a change from the initial binning but not a conflict between tools
+  const model = JSON.parse(FIXTURE);
+  const node = model.nodes.find((n) => n.id === "NODE_12");
+  expect(node.bins.r0).toBeNull();
+  expect(node.changed).toBe(true);
+  expect(node.disagreement).toBe(0);
+
+  const errors = await openWorkspace(page);
+
+  // the summary names the set rather than calling it "disputed"
+  await expect(page.locator("#prov-panel")).toContainText("the tools disagree on");
+
+  // and the attention list uses the same wording for the reason
+  const reasons = await page
+    .locator("#prov-panel .sum-attention-reason")
+    .allTextContents();
+  expect(reasons.every((r) => !/disputed/.test(r))).toBe(true);
 
   expect(errors).toEqual([]);
 });

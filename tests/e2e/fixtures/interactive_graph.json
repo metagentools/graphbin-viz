@@ -63,7 +63,8 @@
     "first_iter": null,
     "history": [],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 3
   },
   {
    "id": "NODE_1",
@@ -110,7 +111,8 @@
     "first_iter": null,
     "history": [],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 3
   },
   {
    "id": "NODE_2",
@@ -157,7 +159,8 @@
     "first_iter": null,
     "history": [],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 3
   },
   {
    "id": "NODE_3",
@@ -204,7 +207,8 @@
     "first_iter": null,
     "history": [],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 3
   },
   {
    "id": "NODE_4",
@@ -251,7 +255,8 @@
     "first_iter": null,
     "history": [],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 3
   },
   {
    "id": "NODE_5",
@@ -298,7 +303,8 @@
     "first_iter": null,
     "history": [],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 3
   },
   {
    "id": "NODE_6",
@@ -345,7 +351,8 @@
     "first_iter": null,
     "history": [],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 3
   },
   {
    "id": "NODE_7",
@@ -392,7 +399,8 @@
     "first_iter": null,
     "history": [],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 3
   },
   {
    "id": "NODE_8",
@@ -439,7 +447,8 @@
     "first_iter": null,
     "history": [],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 3
   },
   {
    "id": "NODE_9",
@@ -486,7 +495,8 @@
     "first_iter": null,
     "history": [],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 3
   },
   {
    "id": "NODE_10",
@@ -533,7 +543,8 @@
     "first_iter": null,
     "history": [],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 3
   },
   {
    "id": "NODE_11",
@@ -580,7 +591,8 @@
     "first_iter": null,
     "history": [],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 3
   },
   {
    "id": "NODE_12",
@@ -600,10 +612,10 @@
    "initial_bin": null,
    "final_bin": "bin_1",
    "changed": true,
-   "n_distinct": 2,
-   "disagreement": 0.666667,
+   "n_distinct": 1,
+   "disagreement": 0.0,
    "consensus_bin": "bin_1",
-   "consensus_frac": 0.666667,
+   "consensus_frac": 1.0,
    "prov": {
     "stage": "propagated",
     "was_stripped": false,
@@ -650,7 +662,8 @@
      ]
     ],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 2
   },
   {
    "id": "NODE_13",
@@ -670,10 +683,10 @@
    "initial_bin": null,
    "final_bin": "bin_1",
    "changed": true,
-   "n_distinct": 3,
+   "n_distinct": 2,
    "disagreement": 1.0,
-   "consensus_bin": "bin_1",
-   "consensus_frac": 0.333333,
+   "consensus_bin": "bin_2",
+   "consensus_frac": 0.5,
    "prov": {
     "stage": "propagated",
     "was_stripped": false,
@@ -724,7 +737,8 @@
      ]
     ],
     "n_switches": 1
-   }
+   },
+   "n_assigned": 2
   },
   {
    "id": "NODE_14",
@@ -744,10 +758,10 @@
    "initial_bin": null,
    "final_bin": "bin_2",
    "changed": true,
-   "n_distinct": 2,
-   "disagreement": 0.666667,
+   "n_distinct": 1,
+   "disagreement": 0.0,
    "consensus_bin": "bin_2",
-   "consensus_frac": 0.666667,
+   "consensus_frac": 1.0,
    "prov": {
     "stage": "propagated",
     "was_stripped": false,
@@ -790,7 +804,8 @@
      ]
     ],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 2
   },
   {
    "id": "NODE_15",
@@ -856,7 +871,8 @@
      ]
     ],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 3
   },
   {
    "id": "NODE_16",
@@ -876,10 +892,10 @@
    "initial_bin": "bin_1",
    "final_bin": null,
    "changed": true,
-   "n_distinct": 3,
+   "n_distinct": 2,
    "disagreement": 1.0,
-   "consensus_bin": "bin_1",
-   "consensus_frac": 0.333333,
+   "consensus_bin": "bin_2",
+   "consensus_frac": 0.5,
    "prov": {
     "stage": "stripped_post",
     "was_stripped": true,
@@ -922,7 +938,8 @@
      ]
     ],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 2
   },
   {
    "id": "NODE_17",
@@ -942,10 +959,10 @@
    "initial_bin": null,
    "final_bin": null,
    "changed": false,
-   "n_distinct": 1,
+   "n_distinct": 0,
    "disagreement": 0.0,
    "consensus_bin": null,
-   "consensus_frac": 1.0,
+   "consensus_frac": 0.0,
    "prov": {
     "stage": "unresolved",
     "was_stripped": false,
@@ -978,7 +995,8 @@
     "first_iter": null,
     "history": [],
     "n_switches": 0
-   }
+   },
+   "n_assigned": 0
   }
  ],
  "edges": [
