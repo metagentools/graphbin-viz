@@ -24,6 +24,9 @@ import { zoom, zoomIdentity } from "d3-zoom";
 import "d3-transition";
 
 import App from "./App.jsx";
+
+// Fluent UI is CSS-in-JS (Griffel), so there is no component stylesheet to
+// import here: FluentProvider injects what the rendered components need.
 import "./style.css";
 
 // The drawing code reads these off `window`, the way it did when d3 was a

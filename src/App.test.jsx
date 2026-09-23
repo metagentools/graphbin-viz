@@ -8,8 +8,13 @@ test("renders main header and tabs", () => {
     screen.getByRole("heading", { name: /GraphBin-Viz/i })
   ).toBeInTheDocument();
 
-  const tabs = screen.getAllByRole("tab").map((t) => t.textContent);
-  expect(tabs).toEqual(["Run log & exports", "Workspace"]);
+  // by accessible name, not textContent: a Fluent Tab carries a hidden
+  // copy of its label to reserve the width the selected (bold) state needs
+  expect(screen.getAllByRole("tab")).toHaveLength(2);
+  expect(
+    screen.getByRole("tab", { name: "Run log & exports" })
+  ).toBeInTheDocument();
+  expect(screen.getByRole("tab", { name: "Workspace" })).toBeInTheDocument();
 });
 
 test("shows the graph, feature space and flow views together", () => {
@@ -50,7 +55,7 @@ test("accepts additional binning results for comparison", () => {
   expect(input).toHaveAttribute("multiple");
 });
 
-test("offers the filters and markers as a chip row", () => {
+test("offers the filters and markers as a toggle row", () => {
   render(<App />);
 
   const toolbar = document.querySelector(".ws-toolbar");

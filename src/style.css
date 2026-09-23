@@ -1,91 +1,81 @@
-@import url("https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
+/* ---------------------------------------------------------------------
+   Design tokens.
 
-/* Base layout */
+   The chrome is Fluent UI v9. FluentProvider publishes its theme as CSS
+   variables on its own element, so the app's variables below are declared
+   there too (.app-provider) rather than on :root, and light/dark follows the
+   theme object rather than a second palette of our own.
+
+   The brand pair stays blue + red; blue carries interaction, red carries
+   contradiction (rejected labels, disagreement).
+
+   The --plot-* group is deliberately not themed: the plot surfaces stay
+   white in both appearances so the encoding palettes keep the contrast
+   they were validated for.
+   --------------------------------------------------------------------- */
 :root{
-  color-scheme: light;
   --brand-blue-rgb: 0, 127, 255;
   --brand-red-rgb: 255, 0, 0;
-  --font-body: "Sora", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  --font-display: "Space Grotesk", system-ui, sans-serif;
-  --bg: #f3f6fb;
-  --bg-strong: #eef2f8;
-  --panel: #ffffff;
-  --panel-alt: #f8fafc;
-  --text: #0f172a;
-  --muted: #5b6476;
-  --border: #dce3ef;
-  --border-strong: #c9d3e6;
-  --shadow: 0 26px 60px rgba(15, 23, 42, 0.12);
-  --shadow-sm: 0 10px 24px rgba(15, 23, 42, 0.08);
-  --radius: 18px;
-  --focus: rgba(var(--brand-blue-rgb), 0.28);
-  --accent: rgb(var(--brand-blue-rgb));
-  --accent-2: rgb(var(--brand-red-rgb));
-  --accent-3: #b60028;
-  --input-bg: #ffffff;
-  --output-bg: #f8fafc;
-  --output-text: #0f172a;
-  --output-border: #d6deea;
-  --output-shadow: rgba(15, 23, 42, 0.08);
+  --flow-panel-height: 780px;
+
+  /* not themed: see above */
   --plot-bg: #ffffff;
   --plot-text: #0f172a;
   --plot-border: #e2e8f0;
   --plot-pill-bg: #f1f5f9;
   --plot-pill-border: #e2e8f0;
-  --flow-panel-height: 780px;
 }
 
-:root[data-theme="dark"]{
-  color-scheme: dark;
-  --bg: #0b0f19;
-  --bg-strong: #0f1624;
-  --panel: #0f1624;
-  --panel-alt: #121c2c;
-  --text: #e5e7eb;
-  --muted: #9aa4b2;
-  --border: #1f2a3a;
-  --border-strong: #253246;
-  --shadow: 0 30px 80px rgba(2, 6, 23, 0.55);
-  --shadow-sm: 0 12px 28px rgba(0, 0, 0, 0.45);
-  --focus: rgba(var(--brand-blue-rgb), 0.34);
-  --accent: #4ca3ff;
-  --accent-2: #ff4d5a;
-  --accent-3: #ff6b77;
-  --input-bg: #0b1322;
-  --output-bg: #0b1220;
-  --output-text: #e2e8f0;
-  --output-border: #1f2a3a;
-  --output-shadow: rgba(0, 0, 0, 0.55);
-  --plot-bg: #ffffff;
-  --plot-text: #0f172a;
-  --plot-border: #e2e8f0;
-  --plot-pill-bg: #f1f5f9;
-  --plot-pill-border: #e2e8f0;
+/* FluentProvider mounts a second element with this same className to portal
+   tooltips and popovers into. It must carry the tokens so portalled content
+   is themed, but it must not carry the page's size or background, or it
+   covers the app and swallows every click. */
+.app-provider:not([data-portal-node]){
+  min-height: 100vh;
+  background: var(--colorNeutralBackground2);
+}
+
+.app-provider{
+  --font-body: var(--fontFamilyBase);
+  --font-display: var(--fontFamilyBase);
+
+  --bg: var(--colorNeutralBackground2);
+  --bg-strong: var(--colorNeutralBackground3);
+  --panel: var(--colorNeutralBackground1);
+  --panel-alt: var(--colorNeutralBackground2);
+  --text: var(--colorNeutralForeground1);
+  --muted: var(--colorNeutralForeground3);
+  --border: var(--colorNeutralStroke2);
+  --border-strong: var(--colorNeutralStroke1);
+
+  /* surfaces are separated by a hairline, not by elevation */
+  --shadow: none;
+  --shadow-sm: none;
+  --radius: var(--borderRadiusMedium);
+  --radius-sm: var(--borderRadiusSmall);
+
+  --focus: var(--colorStrokeFocus2);
+  --accent: var(--colorBrandForeground1);
+  --accent-2: var(--colorPaletteRedForeground1);
+  --accent-3: var(--colorPaletteRedForeground2);
+
+  --input-bg: var(--colorNeutralBackground1);
+  --output-bg: var(--colorNeutralBackground2);
+  --output-text: var(--colorNeutralForeground1);
+  --output-border: var(--colorNeutralStroke2);
 }
 
 *{ box-sizing: border-box; }
 
+/* the provider paints the page; body only has to get out of the way */
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(1000px 600px at 10% -10%, rgba(var(--brand-blue-rgb), 0.18), transparent 60%),
-              radial-gradient(900px 600px at 110% 0%, rgba(var(--brand-red-rgb), 0.12), transparent 55%),
-              var(--bg);
-  font-family: var(--font-body);
-  color: var(--text);
-  letter-spacing: -0.01em;
 }
 
 .app-header{
   position: relative;
   z-index: 1;
-}
-
-:root[data-theme="dark"] body{
-  background: radial-gradient(1000px 600px at 10% -10%, rgba(var(--brand-blue-rgb), 0.2), transparent 60%),
-              radial-gradient(900px 600px at 110% 0%, rgba(var(--brand-red-rgb), 0.16), transparent 55%),
-              var(--bg);
 }
 
 .app {
@@ -116,101 +106,45 @@ body {
 }
 
 .app-footer a:focus-visible{
-  outline: none;
-  box-shadow: 0 0 0 3px var(--focus);
-  border-radius: 6px;
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
+/* a Radix IconButton; the app only says where it sits */
 .theme-toggle{
   position: fixed;
   top: 18px;
   right: 18px;
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  box-shadow: var(--shadow-sm);
-  cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   z-index: 20;
 }
 
-.theme-toggle:hover{
-  transform: translateY(-1px);
-  border-color: var(--border-strong);
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
-}
-
-.theme-toggle:focus-visible{
-  outline: none;
-  box-shadow: 0 0 0 3px var(--focus);
-}
-
-.theme-toggle .icon{
-  width: 20px;
-  height: 44px;
-  fill: currentColor;
-  position: absolute;
-  transition: transform 0.2s ease, opacity 0.2s ease;
-  color: var(--text);
-}
-
-.theme-toggle .moon{
-  opacity: 0;
-  transform: rotate(45deg) scale(0.7);
-}
-
-.theme-toggle .sun{
-  opacity: 1;
-}
-
-:root[data-theme="light"] .theme-toggle .moon{
-  opacity: 0;
-  transform: rotate(45deg) scale(0.7);
-}
-
-:root[data-theme="light"] .theme-toggle .sun{
-  opacity: 1;
-  transform: scale(1);
-}
-
-:root[data-theme="dark"] .theme-toggle .sun{
-  opacity: 0;
-  transform: rotate(-45deg) scale(0.7);
-}
-
-:root[data-theme="dark"] .theme-toggle .moon{
-  opacity: 1;
-  transform: scale(1);
+/* the icon is the Fluent one the button is given; only the swap is ours */
+.theme-toggle{
+  min-width: 32px;
 }
 
 @media (max-width: 700px){
   .theme-toggle{
     top: 12px;
     right: 12px;
-    width: 40px;
-    height: 40px;
   }
 }
 
 /* Header */
 .app-header h1 {
-  margin: 0 0 6px;
-  font-size: clamp(1.8rem, 2.6vw, 2.6rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  margin: 0 0 10px;
+  font-size: clamp(1.7rem, 2.4vw, 2.25rem);
+  line-height: 1.2;
+  font-weight: 600;
   font-family: var(--font-display);
 }
 
 .title-subtitle{
   margin: 0 0 16px;
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -0.01em;
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: var(--muted);
 }
 
 .logo-swap{
@@ -262,41 +196,11 @@ body {
   position: relative;
   width: 100%;
   padding: 18px 20px 20px;
-  border-radius: 18px;
-  background: linear-gradient(140deg, rgba(var(--brand-blue-rgb), 0.14), rgba(255, 255, 255, 0.9) 56%, rgba(var(--brand-red-rgb), 0.08));
-  border: 1px solid var(--border-strong);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.intro-card::before{
-  content: "";
-  position: absolute;
-  top: -48px;
-  right: -64px;
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(var(--brand-red-rgb), 0.2), transparent 62%);
-  pointer-events: none;
-}
-
-.intro-card::after{
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  pointer-events: none;
-}
-
-:root[data-theme="dark"] .intro-card{
-  background: linear-gradient(140deg, rgba(var(--brand-blue-rgb), 0.22), rgba(11, 18, 32, 0.94) 56%, rgba(var(--brand-red-rgb), 0.16));
-  border-color: rgba(var(--brand-blue-rgb), 0.22);
-}
-
-:root[data-theme="dark"] .intro-card::after{
-  border-color: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  /* the left edge is the only colour it needs */
+  border-left: 3px solid var(--accent);
 }
 
 .intro-eyebrow{
@@ -310,8 +214,8 @@ body {
 
 .intro-lede{
   margin: 0 0 8px;
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 500;
   color: var(--text);
 }
 
@@ -329,24 +233,6 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.intro-chip{
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  color: var(--text);
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-:root[data-theme="dark"] .intro-chip{
-  background: var(--panel-alt);
-  border-color: rgba(148, 163, 184, 0.2);
 }
 
 .intro-row{
@@ -374,23 +260,15 @@ body {
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
-.logo-link:hover{
-  transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
-}
-
 .logo-link:focus-visible{
-  outline: none;
-  box-shadow: 0 0 0 3px var(--focus);
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .intro-logo-inline{
   display: inline-flex;
   align-items: center;
   padding: 2px 6px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--panel);
 }
 
 .intro-logo-inline .logo-swap{
@@ -403,11 +281,6 @@ body {
 
 .intro-logo-inline .logo-link{
   border-bottom: none;
-}
-
-:root[data-theme="dark"] .intro-logo-inline{
-  background: var(--panel-alt);
-  border-color: rgba(148, 163, 184, 0.2);
 }
 
 @media (max-width: 900px){
@@ -434,9 +307,9 @@ body {
 }
 
 .subtitle a:focus-visible{
-  outline: none;
-  box-shadow: 0 0 0 3px var(--focus);
-  border-radius: 4px;
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* Generic panel / card */
@@ -444,23 +317,21 @@ body {
   background: var(--panel);
   border-radius: var(--radius);
   padding: 22px 24px 26px;
-  box-shadow: var(--shadow);
   border: 1px solid var(--border);
   margin-bottom: 24px;
 }
 
 .panel h2 {
   margin: 0 0 12px;
-  font-family: var(--font-display);
+  font-size: 1.15rem;
   font-weight: 600;
 }
 
 .panel h3 {
   margin: 0 0 12px;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text);
-  font-family: var(--font-display);
 }
 
 /* Tabs */
@@ -473,43 +344,9 @@ body {
   padding: 18px 20px 0;
 }
 
-.tab-buttons{
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
-  gap: 10px;
-}
-
-.tab-btn{
-  border: 1px solid var(--border);
-  background: var(--panel-alt);
-  color: var(--muted);
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease,
-    transform 0.18s ease, box-shadow 0.18s ease;
-}
-
-.tab-btn:hover{
-  color: var(--text);
-  border-color: var(--border-strong);
-  transform: translateY(-1px);
-}
-
-.tab-btn.active{
-  background: linear-gradient(135deg, rgba(var(--brand-blue-rgb), 0.14), rgba(var(--brand-red-rgb), 0.14));
-  color: var(--text);
-  border-color: rgba(var(--brand-blue-rgb), 0.5);
-  box-shadow: 0 12px 24px rgba(var(--brand-blue-rgb), 0.18);
-}
-
-.tab-btn:focus-visible{
-  outline: none;
-  box-shadow: 0 0 0 3px var(--focus);
-}
+/* The tab strip is a Fluent TabList. The panels stay ours: they must both
+   remain in the document for the canvases to be measurable, and the e2e
+   suite addresses them by id. */
 
 .tab-panels{
   padding: 18px 20px 26px;
@@ -557,38 +394,13 @@ body {
   gap: 12px;
 }
 
-.collapse-toggle{
-  border: 1px solid var(--border);
-  background: var(--panel);
-  color: var(--text);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 6px 10px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
-}
-
-.collapse-toggle:hover{
-  border-color: var(--border-strong);
-  transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
-}
-
-.collapse-toggle:focus-visible{
-  outline: none;
-  box-shadow: 0 0 0 3px var(--focus);
-}
-
 .tab-section.collapsed .section-body{
   display: none;
 }
 
 .tab-section.collapsed{
   border: 1px dashed var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 10px 12px;
   background: var(--panel-alt);
 }
@@ -606,10 +418,6 @@ body {
 @media (max-width: 720px){
   .tab-header{
     padding: 14px 14px 0;
-  }
-
-  .tab-buttons{
-    grid-auto-flow: row;
   }
 
   .tab-panels{
@@ -653,11 +461,9 @@ body {
 }
 
 .settings-title{
-  font-size: 0.86rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  color: var(--muted);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  color: var(--text);
   margin-bottom: 10px;
 }
 
@@ -689,88 +495,13 @@ body {
   gap: 12px;
 }
 
-.range-row input[type="range"]{
-  width: 100%;
+.range-row .fui-Slider{
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-/* ---------------------------------------------------------------------
-   Range inputs
-   A native range paints its filled portion only as far as the centre of
-   the thumb, so the track never looks full at the maximum and never looks
-   empty at the minimum. Paint the fill ourselves across the whole track
-   instead, from a --fill percentage the script keeps in step with the
-   value.
-   --------------------------------------------------------------------- */
-
-input[type="range"]{
-  --fill: 0%;
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 18px;
-  margin: 0;
-  background: transparent;
-  cursor: pointer;
-}
-
-input[type="range"]:disabled{
-  cursor: default;
-  opacity: 0.55;
-}
-
-input[type="range"]::-webkit-slider-runnable-track{
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(
-    to right,
-    var(--accent) 0 var(--fill),
-    var(--border-strong) var(--fill) 100%
-  );
-}
-
-input[type="range"]::-moz-range-track{
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(
-    to right,
-    var(--accent) 0 var(--fill),
-    var(--border-strong) var(--fill) 100%
-  );
-}
-
-input[type="range"]::-webkit-slider-thumb{
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  margin-top: -4px;
-  border-radius: 50%;
-  background: var(--accent);
-  border: 2px solid var(--panel);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.3);
-}
-
-input[type="range"]::-moz-range-thumb{
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--accent);
-  border: 2px solid var(--panel);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.3);
-}
-
-input[type="range"]:focus{
-  outline: none;
-}
-
-/* one deliberate ring around the control rather than the browser's default,
-   which traces the whole box and reads as a stray outline */
-input[type="range"]:focus-visible{
-  outline: 3px solid var(--focus);
-  outline-offset: 3px;
-  border-radius: 999px;
-}
-
+/* The sliders are Fluent Sliders now; the hand-painted track that made a
+   native range read as full at its maximum went with them. */
 .range-value{
   min-width: 40px;
   text-align: right;
@@ -782,7 +513,7 @@ input[type="range"]:focus-visible{
 
 label{
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
   line-height: 1.2;
 }
@@ -798,106 +529,73 @@ label{
   margin: 0;
 }
 
-.help{
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-.help summary{
-  list-style: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--panel-alt);
+/* the "?" next to a field label is a Fluent Button in a Fluent Tooltip */
+.help-btn{
+  min-width: 20px;
+  max-width: 20px;
+  height: 20px;
+  padding: 0;
   color: var(--muted);
-  font-size: 0.7rem;
-  font-weight: 700;
-  line-height: 1;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease,
-    transform 0.18s ease, background 0.18s ease;
 }
 
-.help summary::-webkit-details-marker{
-  display: none;
-}
+/* ---------------------------------------------------------------------
+   The one native control left.
 
-.help summary:focus-visible{
-  outline: none;
-  box-shadow: 0 0 0 3px var(--focus);
-}
-
-.help[open] summary{
-  color: var(--text);
-  border-color: var(--border-strong);
-  background: var(--panel);
-  transform: translateY(-1px);
-}
-
-.help-tooltip{
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
-  min-width: 220px;
-  max-width: 280px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  color: var(--text);
-  font-size: 0.85rem;
-  font-weight: 500;
-  line-height: 1.35;
-  box-shadow: var(--shadow-sm);
-  z-index: 20;
-}
-
-.help[open] .help-tooltip{
-  animation: tooltip-pop 0.18s ease;
-}
-
-@keyframes tooltip-pop{
-  from{
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to{
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Inputs */
-input,
-select{
-  width: 100%;
-  height: 40px;
-  padding: 8px 12px;
-  font-size: 0.95rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--input-bg);
-  color: var(--text);
-  outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
+   Fluent has no file input, and the drawing code reads .files off these, so
+   they stay native elements dressed to match a Fluent Input. Everything else
+   in the form is a Fluent Select or Input.
+   --------------------------------------------------------------------- */
 input[type="file"]{
-  padding: 6px 10px;
-  height: 42px;
+  width: 100%;
+  padding: 4px;
+  font-family: var(--fontFamilyBase);
+  font-size: var(--fontSizeBase300);
+  color: var(--text);
+  background: var(--colorNeutralBackground1);
+  border: 1px solid var(--colorNeutralStroke1);
+  border-bottom-color: var(--colorNeutralStrokeAccessible);
+  border-radius: var(--borderRadiusMedium);
 }
 
-input:focus,
-select:focus{
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--focus);
+input[type="file"]::file-selector-button{
+  font: inherit;
+  font-size: var(--fontSizeBase200);
+  font-weight: var(--fontWeightSemibold);
+  margin-right: 8px;
+  padding: 3px 10px;
+  border: 1px solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusMedium);
+  background: var(--colorNeutralBackground1);
+  color: var(--text);
+  cursor: pointer;
 }
 
-/* Buttons */
+input[type="file"]::file-selector-button:hover{
+  background: var(--colorNeutralBackground1Hover);
+}
+
+input[type="file"]:focus-visible{
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+/* Fluent's Select and Input size themselves; these only make them fill the
+   cell the form grid gives them. */
+.control .fui-Select,
+.control .fui-Input,
+.tb-field .fui-Select,
+.curation-panel .fui-Select{
+  width: 100%;
+}
+
+/* ---------------------------------------------------------------------
+   Buttons.
+
+   Every button in the React tree is a Fluent Button, ToggleButton or
+   Checkbox; there is no button styling of our own left. What remains is a
+   small fallback for the handful of buttons the drawing code writes into
+   innerHTML, matched to Fluent's secondary button.
+   --------------------------------------------------------------------- */
 .button-row {
   margin-top: 18px;
   display: flex;
@@ -906,65 +604,41 @@ select:focus{
 }
 
 .btn {
-  border: 1px solid transparent;
-  border-radius: 999px;
-  padding: 10px 18px;
-  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusMedium);
+  font-family: var(--fontFamilyBase);
+  font-size: var(--fontSizeBase200);
+  font-weight: var(--fontWeightSemibold);
+  line-height: var(--lineHeightBase200);
+  color: var(--colorNeutralForeground1);
+  background: var(--colorNeutralBackground1);
   cursor: pointer;
-  font-weight: 600;
-  color: var(--text);
-  background: var(--panel-alt);
-  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease,
-    box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.btn.primary {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-  color: #ffffff;
-  box-shadow: 0 14px 28px rgba(var(--brand-blue-rgb), 0.24);
-  border-color: transparent;
-}
-
-.btn.primary:hover {
-  transform: translateY(-2px);
-}
-
-.btn.secondary {
-  background: var(--panel-alt);
-  border-color: var(--border);
-}
-
-.btn.secondary:hover {
-  background: var(--bg-strong);
-}
-
-.btn.tertiary {
-  background: transparent;
-  border-color: var(--border);
-  color: var(--text);
-}
-
-.btn.tertiary:hover {
-  background: var(--panel-alt);
+.btn:hover {
+  background: var(--colorNeutralBackground1Hover);
+  border-color: var(--colorNeutralStroke1Hover);
 }
 
 .btn:focus-visible{
-  outline: none;
-  box-shadow: 0 0 0 3px var(--focus);
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
 }
 
-#reset-view,
-#example-btn,
-#download-initial,
-#download-final {
-  box-shadow: 0 8px 18px rgba(17, 24, 39, 0.12);
+/* A Fluent Button is inline-flex, which outranks the hidden attribute. */
+.fui-Button[hidden]{
+  display: none;
 }
 
-#reset-view:hover,
-#example-btn:hover,
-#download-initial:hover,
-#download-final:hover {
-  transform: translateY(-1px);
+/* the export button sits in a grid track, so it would otherwise stretch */
+#download-graphbin{
+  justify-self: start;
 }
 
 /* Plots row */
@@ -987,7 +661,7 @@ select:focus{
 .plot-block img {
   max-width: 100%;
   height: auto;
-  border-radius: 12px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--plot-bg);
 }
@@ -995,7 +669,7 @@ select:focus{
 .plot-block .plot-pdf{
   width: 100%;
   min-height: 520px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--plot-bg);
 }
@@ -1017,10 +691,9 @@ select:focus{
   overflow-y: auto;
   min-height: 150px;
   max-height: 260px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 0.85rem;
   border: 1px solid var(--output-border);
-  box-shadow: inset 0 0 10px var(--output-shadow);
 }
 
 .status-card{
@@ -1033,9 +706,7 @@ select:focus{
 }
 
 .status-title{
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--muted);
 }
@@ -1067,7 +738,7 @@ select:focus{
 .interactive-canvas-wrap{
   position: relative;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius);
   overflow: hidden;           /* keep drawing inside the panel */
   background: var(--plot-bg);
 }
@@ -1105,14 +776,13 @@ select:focus{
   position: absolute;
   pointer-events: none;
   max-width: 340px;
-  background: rgba(17, 24, 39, 0.95);
+  background: rgba(17, 24, 39, 0.96);
   color: #e5e7eb;
   border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 13.5px;
-  line-height: 1.3;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.25);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 12.5px;
+  line-height: 1.35;
   z-index: 10;
 }
 
@@ -1157,21 +827,20 @@ select:focus{
 .flow-stat{
   background: var(--panel-alt);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 12px 14px;
-  box-shadow: var(--shadow-sm);
 }
 
 .flow-stat-label{
   color: var(--muted);
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 400;
   margin-bottom: 6px;
 }
 
 .flow-stat-value{
   font-size: 1.4rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
@@ -1193,7 +862,7 @@ select:focus{
   display: flex;
   flex-direction: column;
   border: 1px solid var(--plot-border);
-  border-radius: 14px;
+  border-radius: var(--radius);
   background: var(--plot-bg);
   overflow: hidden;
   min-height: 0;
@@ -1215,7 +884,7 @@ select:focus{
   margin-top: 14px;
   padding: 10px 12px;
   border: 1px dashed var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   color: var(--muted);
   font-size: 0.9rem;
 }
@@ -1241,7 +910,7 @@ select:focus{
   gap: 8px;
   padding: 6px 8px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--panel-alt);
 }
 
@@ -1275,74 +944,15 @@ select:focus{
   white-space: nowrap;
 }
 
-/* Custom checkbox */
-.cb{
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  user-select: none;
-  cursor: pointer;
-  min-height: 28px;
+/* The checkboxes are Fluent Checkboxes; only their density is ours. */
+.ws-view-controls .fui-Checkbox{
+  margin: 0;
 }
 
-.cb input{
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.cb-box{
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  border: 1.5px solid var(--border);
-  background: var(--input-bg);
-  display: inline-grid;
-  place-items: center;
-  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
-}
-
-/* checkmark */
-.cb-box::after{
-  content: "";
-  width: 11px;
-  height: 7px;
-  border-left: 2px solid #fff;
-  border-bottom: 2px solid #fff;
-  transform: rotate(-45deg) scale(0);
-  transform-origin: center;
-  transition: transform 0.12s ease;
-}
-
-.cb-text{
-  color: var(--text);
-}
-
-/* checked */
-.cb input:checked + .cb-box{
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
-.cb input:checked + .cb-box::after{
-  transform: rotate(-45deg) scale(1);
-}
-
-/* hover */
-.cb:hover .cb-box{
-  border-color: var(--border-strong);
-}
-
-/* keyboard focus */
-.cb input:focus-visible + .cb-box{
-  box-shadow: 0 0 0 3px var(--focus);
-  border-color: var(--accent);
-}
-
-/* disabled (if you ever use it) */
-.cb input:disabled + .cb-box{
-  opacity: 0.5;
-  cursor: not-allowed;
+.ws-view-controls .fui-Checkbox__label{
+  font-size: 12px;
+  white-space: nowrap;
+  padding-right: 0;
 }
 
 .sankey-title-row{
@@ -1358,14 +968,12 @@ select:focus{
 
 .sankey-title{
   font-weight: 600;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: 0.75rem;
   color: var(--plot-text);
   background: var(--plot-pill-bg);
   border: 1px solid var(--plot-pill-border);
-  padding: 6px 10px;
-  border-radius: 999px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
 }
 
 #sankey-left-title{ text-align: left; }
@@ -1402,7 +1010,7 @@ select:focus{
   gap: 10px;
   padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius);
   background: var(--panel-alt);
 }
 
@@ -1421,17 +1029,13 @@ select:focus{
 }
 
 .tb-field label{
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 600;
+  font-size: 11.5px;
+  font-weight: 500;
   color: var(--muted);
 }
 
-.tb-field select{
+.tb-field .fui-Select{
   min-width: 150px;
-  padding: 7px 10px;
-  font-size: 13px;
 }
 
 .tb-field-range{
@@ -1443,18 +1047,8 @@ select:focus{
   height: 34px;
 }
 
-.tb-actions{
-  display: flex;
-  gap: 8px;
-  margin-left: auto;
-}
-
-.tb-btn{
-  padding: 8px 12px;
-  font-size: 12.5px;
-}
-
-/* filter chips: every filter is a simple on/off, so they read as a row */
+/* The filters and markers are Fluent ToggleButtons; the row only has to
+   space them and mark the two groups. */
 
 .tb-row-chips{
   align-items: center;
@@ -1464,9 +1058,7 @@ select:focus{
 }
 
 .tb-chip-label{
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--muted);
 }
@@ -1477,64 +1069,23 @@ select:focus{
   background: var(--border);
 }
 
-.chip{
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
-}
-
-.chip input{
-  position: absolute;
-  opacity: 0;
-  width: 1px;
-  height: 1px;
-}
-
-.chip span{
-  display: inline-block;
-  padding: 5px 11px;
-  border-radius: 999px;
-  border: 1px solid var(--border-strong);
-  background: var(--input-bg);
-  color: var(--muted);
-  font-size: 12.5px;
-  line-height: 1.2;
-  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
-}
-
-.chip:hover span{
-  border-color: var(--accent);
-  color: var(--text);
-}
-
-.chip input:checked + span{
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #ffffff;
-}
-
-.chip input:focus-visible + span{
-  outline: 3px solid var(--focus);
-  outline-offset: 1px;
-}
-
-.tb-selection{
-  margin-left: auto;
-  font-size: 12px;
-  color: var(--accent);
-  font-weight: 600;
-}
-
 /* ---------------- views ---------------- */
 
 /* The graph title sits at the top of its column, level with the inspector
    heading opposite it, so the two columns start on the same line. */
 .ws-main-head{
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ws-head-actions{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .ws-main-head .settings-title{
@@ -1548,7 +1099,7 @@ select:focus{
 .ws-view{
   min-width: 0;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius);
   background: var(--panel-alt);
   padding: 10px 12px 12px;
 }
@@ -1563,7 +1114,6 @@ select:focus{
 }
 
 .ws-view-title{
-  font-family: var(--font-display);
   font-size: 13.5px;
   font-weight: 600;
   color: var(--text);
@@ -1600,33 +1150,10 @@ select:focus{
   flex-wrap: nowrap;
 }
 
-.ws-view-controls select{
+.ws-view-controls .fui-Select{
   width: auto;
-  min-width: 88px;
+  min-width: 96px;
   flex: 0 0 auto;
-  font-size: 12px;
-  padding: 4px 8px;
-}
-
-.ws-view-controls .cb{
-  min-height: 22px;
-  gap: 6px;
-}
-
-.ws-view-controls .cb-box{
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-}
-
-.ws-view-controls .cb-box::after{
-  width: 8px;
-  height: 5px;
-}
-
-.ws-view-controls .cb-text{
-  font-size: 12px;
-  white-space: nowrap;
 }
 
 .workspace #graph-canvas{
@@ -1653,10 +1180,8 @@ select:focus{
   display: flex;
   flex-direction: column;
   border: 1px solid var(--plot-border);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(2px);
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.94);
   overflow: hidden;
 }
 
@@ -1668,11 +1193,9 @@ select:focus{
   border: none;
   border-bottom: 1px solid var(--plot-border);
   padding: 7px 10px;
-  font-family: var(--font-display);
-  font-size: 11px;
+  font: inherit;
+  font-size: 11.5px;
   font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   color: var(--plot-text);
   cursor: pointer;
 }
@@ -1725,7 +1248,7 @@ select:focus{
   margin-top: 10px;
   padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: var(--panel-alt);
 }
 
@@ -1738,21 +1261,17 @@ select:focus{
 }
 
 .replay-label{
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--muted);
   white-space: nowrap;
 }
 
-.replay-bar .btn{
-  padding: 5px 12px;
-  font-size: 12px;
+.replay-bar .fui-Button{
   flex: none;
 }
 
-.replay-bar input[type="range"]{
+.replay-bar .fui-Slider{
   flex: 1 1 160px;
   min-width: 100px;
 }
@@ -1765,17 +1284,13 @@ select:focus{
 }
 
 .replay-speed > span{
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 600;
+  font-size: 11.5px;
+  font-weight: 500;
   color: var(--muted);
 }
 
-.replay-speed select{
-  padding: 4px 8px;
-  font-size: 12px;
-  min-width: 96px;
+.replay-speed .fui-Select{
+  min-width: 108px;
 }
 
 .replay-hint{
@@ -1795,10 +1310,24 @@ select:focus{
   align-items: stretch;
 }
 
+/* The flow view is the taller of the two — it carries a row of stats above
+   its diagram — and the row stretches both cards to match. The scatter takes
+   the slack rather than leaving it blank under the plot. */
+.ws-scatter{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ws-scatter .ws-view-header{
+  margin-bottom: 0;
+}
+
 .scatter-wrap{
   position: relative;
-  height: 300px;
-  border-radius: 10px;
+  flex: 1 1 auto;
+  min-height: 240px;
+  border-radius: var(--radius);
   background: var(--plot-bg);
   border: 1px solid var(--border);
   color: var(--plot-text);
@@ -1907,7 +1436,7 @@ select:focus{
 .prov-panel,
 .curation-panel{
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius);
   background: var(--panel-alt);
   padding: 12px;
   font-size: 12.5px;
@@ -1933,7 +1462,7 @@ select:focus{
   gap: 4px;
 }
 
-.curation-panel select{
+.curation-panel .fui-Select{
   width: 100%;
 }
 
@@ -1943,10 +1472,8 @@ select:focus{
   flex-wrap: wrap;
 }
 
-.ws-button-row .btn{
+.ws-button-row .fui-Button{
   flex: 1 1 auto;
-  font-size: 12.5px;
-  padding: 7px 10px;
 }
 
 /* ---------------- summary ---------------- */
@@ -2079,7 +1606,7 @@ select:focus{
   padding: 9px 11px;
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--panel);
 }
 
@@ -2091,9 +1618,8 @@ select:focus{
 }
 
 .sum-callout-count{
-  font-family: var(--font-display);
   font-size: 19px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.1;
   color: var(--text);
   font-variant-numeric: tabular-nums;
@@ -2107,8 +1633,6 @@ select:focus{
 
 .sum-callout-btn{
   flex: none;
-  padding: 6px 12px;
-  font-size: 12px;
 }
 
 .sum-attention{
@@ -2148,7 +1672,6 @@ select:focus{
 }
 
 .prov-id{
-  font-family: var(--font-display);
   font-size: 14px;
   font-weight: 600;
   word-break: break-all;
@@ -2195,27 +1718,22 @@ select:focus{
 .prov-metric{
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 6px 8px;
 }
 
 .prov-metric-label{
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: 11px;
   color: var(--muted);
 }
 
 .prov-metric-value{
-  font-family: var(--font-display);
   font-size: 15px;
   font-weight: 600;
 }
 
 .prov-section-title{
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 11.5px;
   color: var(--muted);
   margin: 12px 0 6px;
   font-weight: 600;
@@ -2322,8 +1840,6 @@ select:focus{
 .prov-highlight{
   margin-top: 8px;
   width: 100%;
-  font-size: 12px;
-  padding: 6px 10px;
 }
 
 .override-summary{
@@ -2401,16 +1917,92 @@ select:focus{
     height: 460px;
   }
 
-  .tb-actions{
-    margin-left: 0;
-  }
-
-  .tb-selection{
-    margin-left: 0;
-    width: 100%;
-  }
-
   .legend-overlay{
     width: 150px;
   }
+}
+
+
+/* =====================================================================
+   Loading shimmers
+   ---------------------------------------------------------------------
+   A run means downloading Pyodide, loading igraph and matplotlib, then
+   GraphBin itself, and until that finishes the views are blank. The
+   skeletons sit over them rather than replacing them: the canvas and the
+   two SVGs belong to the drawing code and have to stay in the document for
+   it to size them. None of these take the pointer.
+   ===================================================================== */
+
+.shimmer-overlay{
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  padding: 10px;
+  background: var(--plot-bg);
+  pointer-events: none;
+}
+
+/* one block filling the frame, like the static plots */
+.shimmer-overlay .fui-SkeletonItem{
+  flex: 1 1 auto;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+/* the legend has nothing in it yet, so it should not sit over the skeleton */
+.shimmer-graph ~ #legend-overlay{
+  display: none;
+}
+
+/* the inspector's card is written into by the drawing code, so the skeleton
+   covers it rather than standing in for its contents */
+.prov-shell{
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+
+.prov-shell .prov-panel{
+  flex: 1 1 auto;
+}
+
+.shimmer-inspector{
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-alt);
+  pointer-events: none;
+}
+
+.shimmer-plots{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.shimmer-plots .fui-SkeletonItem{
+  height: 260px;
+}
+
+@media (max-width: 800px){
+  .shimmer-plots{
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Fluent notches a slider's rail once per step. Node size has 28 steps and
+   the replay slider one per iteration, which at these widths reads as a
+   dashed line rather than a track, so the notches are turned off. */
+.tb-field-range .fui-Slider__rail::before,
+.replay-bar .fui-Slider__rail::before{
+  background-image: none;
 }

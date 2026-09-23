@@ -1,3 +1,24 @@
+/**
+ * The seam between the drawing code and the React shell.
+ *
+ * The controls are Fluent components now, so the few of them that hold state
+ * are no longer DOM elements this file can write to: a Fluent Slider's position
+ * and a ToggleButton's pressed state live in React. Rather than reach across
+ * that boundary, the two sides publish named callbacks here — React fills in
+ * the setters, this file fills in the handlers, and neither pokes at the
+ * other's internals.
+ */
+export const uiBridge = {
+  // filled in by the React shell
+  setSlider: null,   // (id, {min?, max?, value?, disabled?}) => void
+  setToggles: null,  // ({ [toggleId]: boolean }) => void
+  setRunning: null,  // (boolean) => void
+
+  // filled in by initApp, called by the React shell
+  onToggle: null,    // (id, on) => void
+  onSlider: null,    // (id, value) => void
+};
+
 export function initApp() {
   if (window.__graphbinAppInitialized) return;
   window.__graphbinAppInitialized = true;
@@ -386,14 +407,11 @@ function resetInteractiveViews() {
   filters.markMisbinned = false;
   filters.markAmbiguous = false;
 
-  for (const id of [
-    "toggle-mark-changed",
-    "toggle-mark-misbinned",
-    "toggle-mark-ambiguous",
-  ]) {
-    const el = document.getElementById(id);
-    if (el) el.checked = false;
-  }
+  uiBridge.setToggles?.({
+    "toggle-mark-changed": false,
+    "toggle-mark-misbinned": false,
+    "toggle-mark-ambiguous": false,
+  });
   filters.onlyDisputed = false;
   filters.onlyLowConfidence = false;
   featureExtents = null;
@@ -402,10 +420,10 @@ function resetInteractiveViews() {
   if (colorModeEl) colorModeEl.value = "bin";
   const sizeModeEl = document.getElementById("size-mode");
   if (sizeModeEl) sizeModeEl.value = "uniform";
-  const onlyDisputedEl = document.getElementById("toggle-only-disputed");
-  if (onlyDisputedEl) onlyDisputedEl.checked = false;
-  const lowConfEl = document.getElementById("toggle-low-confidence");
-  if (lowConfEl) lowConfEl.checked = false;
+  uiBridge.setToggles?.({
+    "toggle-only-disputed": false,
+    "toggle-low-confidence": false,
+  });
   updateSelectionSummary();
 
   // Bin filter → (all bins)
@@ -414,25 +432,15 @@ function resetInteractiveViews() {
     binFilter.value = "";
   }
 
-  // Hide unbinned → unchecked
-  const hideUnbinned = document.getElementById("toggle-hide-unbinned");
-  if (hideUnbinned) {
-    hideUnbinned.checked = false;
-  }
+  // Hide unbinned / hide isolated → off
+  uiBridge.setToggles?.({
+    "toggle-hide-unbinned": false,
+    "toggle-hide-isolated": false,
+  });
 
   // Node size slider → default
-  const nodeSize = document.getElementById("node-size");
-  if (nodeSize) {
-    nodeSize.value = String(NODE_RADIUS.base);
-    updateRangeFill(nodeSize);
-  }
+  uiBridge.setSlider?.("node-size", { value: NODE_RADIUS.base });
   setBaseNodeRadius(NODE_RADIUS.base);
-
-  // Hide isolated contigs → unchecked
-  const hideIsolated = document.getElementById("toggle-hide-isolated");
-  if (hideIsolated) {
-    hideIsolated.checked = false;
-  }
 
 }
 
@@ -1356,22 +1364,29 @@ interactive_export.export(args_ns, "/out/interactive_graph.json")
 /* =========================
    Buttons
    ========================= */
-document.getElementById("run-btn").addEventListener("click", () => {
+/**
+ * Both runs go through here, so this is the one place that knows a run is in
+ * flight. The shell shows its skeletons off this signal; a run that throws
+ * still clears it, otherwise a failed run would shimmer forever.
+ */
+function startRun(work, errorPrefix) {
   resetGraphbinStatus("(GraphBin logs will appear here)");
   resetInteractiveViews();
-  runInputPlot().catch((err) => {
-    console.error(err);
-    log("Error: " + err);
-  });
+  uiBridge.setRunning?.(true);
+  work()
+    .catch((err) => {
+      console.error(err);
+      log(errorPrefix + err);
+    })
+    .finally(() => uiBridge.setRunning?.(false));
+}
+
+document.getElementById("run-btn").addEventListener("click", () => {
+  startRun(runInputPlot, "Error: ");
 });
 
 document.getElementById("example-btn").addEventListener("click", () => {
-  resetGraphbinStatus("(GraphBin logs will appear here)");
-  resetInteractiveViews();
-  runExamplePlot().catch((err) => {
-    console.error(err);
-    log("Error (example): " + err);
-  });
+  startRun(runExamplePlot, "Error (example): ");
 });
 
 document.getElementById("download-initial").addEventListener("click", () => {
@@ -1689,31 +1704,47 @@ function initInteractiveUI() {
     render();
   });
 
-  attachControl("toggle-only-disputed", "change", (e) => {
-    filters.onlyDisputed = e.target.checked;
-    invalidateDerived();
-    render();
-    renderScatter();
-  });
+  // The filter and marker chips are Fluent ToggleButtons; React tells us which
+  // one moved rather than us listening for a change event on a checkbox.
+  const FILTER_TOGGLES = {
+    "toggle-only-disputed": "onlyDisputed",
+    "toggle-low-confidence": "onlyLowConfidence",
+    "toggle-hide-unbinned": "hideUnbinned",
+    "toggle-hide-isolated": "hideIsolated",
+  };
+  const MARKER_TOGGLES = {
+    "toggle-mark-changed": "markChanged",
+    "toggle-mark-misbinned": "markMisbinned",
+    "toggle-mark-ambiguous": "markAmbiguous",
+  };
 
-  attachControl("toggle-low-confidence", "change", (e) => {
-    filters.onlyLowConfidence = e.target.checked;
-    invalidateDerived();
-    render();
-    renderScatter();
-  });
-
-  for (const [id, flag] of [
-    ["toggle-mark-changed", "markChanged"],
-    ["toggle-mark-misbinned", "markMisbinned"],
-    ["toggle-mark-ambiguous", "markAmbiguous"],
-  ]) {
-    attachControl(id, "change", (e) => {
-      filters[flag] = e.target.checked;
+  uiBridge.onToggle = (id, on) => {
+    if (id in FILTER_TOGGLES) {
+      filters[FILTER_TOGGLES[id]] = on;
+      invalidateDerived();
+      render();
+      renderScatter();
+      return;
+    }
+    if (id in MARKER_TOGGLES) {
+      // a marker only changes what is drawn on top, so the derived sets stand
+      filters[MARKER_TOGGLES[id]] = on;
       renderLegend();
       render();
-    });
-  }
+    }
+  };
+
+  uiBridge.onSlider = (id, value) => {
+    if (id === "node-size") {
+      setBaseNodeRadius(value);
+      render();
+      return;
+    }
+    if (id === "replay-slider") {
+      stopReplay();
+      setReplayIteration(value);
+    }
+  };
 
   attachControl("scatter-x", "change", () => renderScatter());
   attachControl("scatter-y", "change", () => renderScatter());
@@ -1739,25 +1770,6 @@ function initInteractiveUI() {
 
   attachControl("bin-filter", "change", (e) => {
     filters.binOnly = e.target.value;
-    invalidateDerived();
-    render();
-    renderScatter();
-  });
-
-  attachControl("toggle-hide-unbinned", "change", (e) => {
-    filters.hideUnbinned = e.target.checked;
-    invalidateDerived();
-    render();
-    renderScatter();
-  });
-
-  attachControl("node-size", "input", (e) => {
-    setBaseNodeRadius(e.target.value);
-    render();
-  });
-
-  attachControl("toggle-hide-isolated", "change", (e) => {
-    filters.hideIsolated = e.target.checked;
     invalidateDerived();
     render();
     renderScatter();
@@ -1814,7 +1826,6 @@ function initInteractiveUI() {
   }
 
   initWorkspaceChrome();
-  initRangeFills();
   populateResultSelect();
   populateBinFilter();
   populateOverrideBins();
@@ -2865,15 +2876,48 @@ function clearSelection() {
   setSelection([], "");
 }
 
+/** The label "select all the contested contigs" puts on the selection. */
+const DISPUTED_LABEL = "tools disagree";
+
+function disputedSelectionIsActive() {
+  return selectionLabel === DISPUTED_LABEL && selection.size > 0;
+}
+
+/**
+ * Keep the callout button saying what it will do next.
+ *
+ * It is the only way into the contested set, so it has to be the way back out;
+ * reading the current selection rather than remembering a click also means a
+ * selection made anywhere else puts it back to "Select all".
+ */
+function syncDisputedButton() {
+  const btn = document.getElementById("sum-select-disputed");
+  if (!btn) return;
+  const active = disputedSelectionIsActive();
+  btn.textContent = active ? "Deselect all" : "Select all";
+  btn.setAttribute("aria-pressed", String(active));
+}
+
+/**
+ * Publish the selection on the workspace element.
+ *
+ * There is no longer a line of text saying what is selected: with seven chips
+ * the toolbar row was already full, so it wrapped and pushed the graph down
+ * every time something was selected. The views themselves show the selection,
+ * and these attributes keep it addressable — by CSS, and by the tests — at no
+ * cost to the layout.
+ */
 function updateSelectionSummary() {
-  const el = document.getElementById("selection-summary");
-  if (!el) return;
+  syncDisputedButton();
+  const ws = document.getElementById("workspace");
+  if (!ws) return;
   if (!selection.size) {
-    el.textContent = "";
+    delete ws.dataset.selected;
+    delete ws.dataset.selectionLabel;
     return;
   }
-  const what = selectionLabel ? ` · ${selectionLabel}` : "";
-  el.textContent = `${selection.size.toLocaleString()} contigs selected${what}`;
+  ws.dataset.selected = String(selection.size);
+  ws.dataset.selectionLabel = selectionLabel || "";
 }
 
 /* =====================================================================
@@ -3245,11 +3289,7 @@ function setReplayIteration(value) {
   if (label) {
     label.textContent = max === 0 ? "off" : replay.active ? `iter ${iter}` : "final";
   }
-  const slider = document.getElementById("replay-slider");
-  if (slider) {
-    if (Number(slider.value) !== iter) slider.value = String(iter);
-    updateRangeFill(slider);
-  }
+  uiBridge.setSlider?.("replay-slider", { value: iter });
 
   const hint = document.getElementById("replay-hint");
   if (hint) {
@@ -3320,7 +3360,8 @@ function syncReplayAvailability() {
     bar.classList.toggle("is-disabled", !applies);
     bar.setAttribute("aria-disabled", String(!applies));
   }
-  for (const id of ["replay-slider", "replay-play", "replay-speed"]) {
+  uiBridge.setSlider?.("replay-slider", { disabled: !applies });
+  for (const id of ["replay-play", "replay-speed"]) {
     const el = document.getElementById(id);
     if (el) el.disabled = !applies;
   }
@@ -3335,25 +3376,15 @@ function syncReplayAvailability() {
 }
 
 function initReplayUI() {
-  const slider = document.getElementById("replay-slider");
   const max = graphModel ? Number(graphModel.maxIteration || 0) : 0;
   replay.max = max;
   replay.iter = max;
   replay.active = false;
 
-  if (slider) {
-    slider.min = "0";
-    slider.max = String(max);
-    slider.value = String(max);
-    updateRangeFill(slider);
-  }
+  uiBridge.setSlider?.("replay-slider", { min: 0, max, value: max });
   const label = document.getElementById("replay-value");
   if (label) label.textContent = max === 0 ? "off" : "final";
 
-  attachControl("replay-slider", "input", (e) => {
-    stopReplay();
-    setReplayIteration(e.target.value);
-  });
   attachControl("replay-play", "click", toggleReplayPlayback);
 
   attachControl("replay-speed", "change", (e) => {
@@ -3897,7 +3928,7 @@ function renderSummaryPanel() {
                <span class="sum-callout-count">${summary.disputed.length.toLocaleString()}</span>
                <span class="sum-callout-label">contigs the tools disagree on</span>
              </div>
-             <button class="btn secondary sum-callout-btn" type="button" id="sum-select-disputed">
+             <button class="btn secondary sum-callout-btn" type="button" id="sum-select-disputed" aria-pressed="false">
                Select all
              </button>
            </div>`
@@ -3935,9 +3966,15 @@ function renderSummaryPanel() {
 
   const disputedBtn = document.getElementById("sum-select-disputed");
   if (disputedBtn) {
-    disputedBtn.addEventListener("click", () =>
-      setSelection(summary.disputed, "tools disagree")
-    );
+    // the one control for the whole set, so it has to undo itself too
+    disputedBtn.addEventListener("click", () => {
+      if (disputedSelectionIsActive()) {
+        clearSelection();
+      } else {
+        setSelection(summary.disputed, DISPUTED_LABEL);
+      }
+    });
+    syncDisputedButton();
   }
 }
 
@@ -3995,30 +4032,5 @@ function initWorkspaceChrome() {
 /* =====================================================================
    Range inputs
    ===================================================================== */
-
-/**
- * Publish a range input's position as a percentage of its whole track, which
- * the stylesheet paints as the filled portion. Doing it here rather than
- * leaving it to the browser is what lets the track read as empty at the
- * minimum and completely full at the maximum.
- */
-function updateRangeFill(el) {
-  if (!el) return;
-  const min = Number(el.min);
-  const max = Number(el.max);
-  const value = Number(el.value);
-  const span = max - min;
-  const pct = span > 0 ? ((value - min) / span) * 100 : 0;
-  el.style.setProperty("--fill", `${Math.max(0, Math.min(100, pct))}%`);
-}
-
-function initRangeFills() {
-  document.querySelectorAll('input[type="range"]').forEach((el) => {
-    updateRangeFill(el);
-    if (el.dataset._fillBound === "1") return;
-    el.addEventListener("input", () => updateRangeFill(el));
-    el.dataset._fillBound = "1";
-  });
-}
 
 }
