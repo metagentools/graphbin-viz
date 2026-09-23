@@ -37,8 +37,10 @@
     "d3-selection": "^2.0.0",
     "d3-transition": "^2.0.0",
     "d3-zoom": "^2.0.0",
+    "plotly.js-basic-dist-min": "^4.1.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-plotly.js": "^4.1.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.1",

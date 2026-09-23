@@ -1,45 +1,61 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useMemo, useRef } from "react";
 import { Select } from "@fluentui/react-select";
 
-import { axisBottom, axisLeft, brush, extent, scaleLinear, scaleLog, select } from "../../d3.js";
+import { PLOT_TEXT } from "../../constants/graph.js";
 import { SCATTER_AXIS_OPTIONS } from "../../constants/encodings.js";
 import { SCATTER_FIELDS } from "../../lib/features.js";
 import { useElementSize } from "../../hooks/useElementSize.js";
 import { useView } from "../../state/viewStore.jsx";
+import { Plot } from "../../lib/plotly.js";
 import { MaximizeButton } from "../common/MaximizeButton.jsx";
 import { ViewShimmer } from "../common/Shimmers.jsx";
 
-const MARGIN = { top: 22, right: 12, bottom: 32, left: 48 };
+const MARGIN = { l: 48, r: 16, t: 22, b: 36 };
+
+// Non-maximized sizes are untouched from before this view moved to Plotly.
+// The maximized card can be several times taller than the docked one (it is
+// `inset: 16px` of the viewport rather than a ~260px-tall card — see
+// `.ws-view.is-maximized` in style.css), and a marker radius or tick label
+// sized for the small card reads as a speck once the card fills the screen.
+// `scaleFor` grows every size that matters (points, axis text, hover text,
+// margins) together, but only while maximized: the docked view is exactly
+// as before.
+const MAXIMIZED_BASELINE_HEIGHT = 260;
+const MAXIMIZED_SCALE_RANGE = [1.3, 2.4];
+
+function scaleFor(maximized, height) {
+  if (!maximized) return 1;
+  const raw = height / MAXIMIZED_BASELINE_HEIGHT;
+  return Math.min(MAXIMIZED_SCALE_RANGE[1], Math.max(MAXIMIZED_SCALE_RANGE[0], raw));
+}
+
+const BASE_POINT_SIZE = { normal: 5, selected: 7.5 };
+const BASE_FONT = { tick: 10, axisTitle: 11.5, hover: 12 };
 
 /**
  * GC × coverage (or any other pair of contig features), brushed against the
  * graph.
  *
- * d3 draws here because the axes, the scales and the brush are its job; the
- * effect re-runs whenever the view state it reads changes, so the plot is a
- * function of that state like every other view.
+ * Plotly draws here rather than raw d3/SVG: the axes, the box/lasso brush
+ * and the zoom are all its job, and — unlike the old hand-rolled d3 brush,
+ * which had no zoom at all — points stay hoverable and clickable at any
+ * zoom level, because Plotly recomputes hit-testing from the current axis
+ * range rather than from the marks drawn at mount time.
  */
 export function FeatureScatter({ derived }) {
   const { model, isVisible, colorOf } = derived;
   const { state, dispatch } = useView();
   const wrapRef = useRef(null);
-  const svgRef = useRef(null);
   const size = useElementSize(wrapRef);
-  const [tooltip, setTooltip] = useState(null);
 
   const maximized = state.maximizedView === "scatter";
 
-  useEffect(() => {
-    const svgEl = svgRef.current;
-    if (!svgEl || !model) return;
+  const xSpec = SCATTER_FIELDS[state.scatter.x];
+  const ySpec = SCATTER_FIELDS[state.scatter.y];
 
-    const width = Math.max(260, size.width || 380);
-    const height = Math.max(180, size.height || 240);
-
-    const xSpec = SCATTER_FIELDS[state.scatter.x];
-    const ySpec = SCATTER_FIELDS[state.scatter.y];
-
-    const points = [];
+  const points = useMemo(() => {
+    if (!model) return [];
+    const out = [];
     for (const n of model.nodes) {
       if (!isVisible(n)) continue;
       const x = xSpec.get(n);
@@ -48,123 +64,117 @@ export function FeatureScatter({ derived }) {
       if (!isFinite(x) || !isFinite(y)) continue;
       if (xSpec.log && x <= 0) continue;
       if (ySpec.log && y <= 0) continue;
-      points.push({ n, x, y });
+      out.push({ n, x, y });
     }
+    return out;
+  }, [model, isVisible, xSpec, ySpec]);
 
-    const svg = select(svgEl);
-    svg.selectAll("*").remove();
-    svg.attr("viewBox", `0 0 ${width} ${height}`);
+  const width = Math.max(260, size.width || 380);
+  const height = Math.max(180, size.height || 240);
+  const scale = scaleFor(maximized, height);
 
-    if (points.length === 0) {
-      svg
-        .append("text")
-        .attr("x", 12)
-        .attr("y", 22)
-        .attr("font-size", 12)
-        .attr("fill", "currentColor")
-        .attr("opacity", 0.6)
-        .text("No contigs with both features under the current filters.");
-      return;
-    }
+  const selection = state.selection;
+  const hasSelection = selection.size > 0;
 
-    const xScale = (xSpec.log ? scaleLog() : scaleLinear())
-      .domain(extent(points, (d) => d.x))
-      .nice()
-      .range([MARGIN.left, width - MARGIN.right]);
-    const yScale = (ySpec.log ? scaleLog() : scaleLinear())
-      .domain(extent(points, (d) => d.y))
-      .nice()
-      .range([height - MARGIN.bottom, MARGIN.top]);
+  const { trace, layout, config } = useMemo(() => {
+    const ids = points.map((d) => d.n.id);
+    const selected = points.map((d) => selection.has(d.n.id));
 
-    // recessive axes
-    svg
-      .append("g")
-      .attr("transform", `translate(0,${height - MARGIN.bottom})`)
-      .attr("opacity", 0.55)
-      .call(axisBottom(xScale).ticks(4, xSpec.log ? "~s" : undefined))
-      .call((g) => g.selectAll("text").attr("font-size", 10))
-      .call((g) => g.select(".domain").attr("stroke", "currentColor").attr("opacity", 0.4));
-    svg
-      .append("g")
-      .attr("transform", `translate(${MARGIN.left},0)`)
-      .attr("opacity", 0.55)
-      .call(axisLeft(yScale).ticks(4, ySpec.log ? "~s" : undefined))
-      .call((g) => g.selectAll("text").attr("font-size", 10))
-      .call((g) => g.select(".domain").attr("stroke", "currentColor").attr("opacity", 0.4));
+    const traceObj = {
+      type: "scatter",
+      mode: "markers",
+      x: points.map((d) => d.x),
+      y: points.map((d) => d.y),
+      customdata: ids,
+      text: ids,
+      hovertemplate:
+        `%{text}<br>${xSpec.label}: %{x}<br>${ySpec.label}: %{y}<extra></extra>`,
+      marker: {
+        color: points.map((d) => colorOf(d.n)),
+        size: selected.map((s) => (s ? BASE_POINT_SIZE.selected : BASE_POINT_SIZE.normal) * scale),
+        opacity: selected.map((s) => (!hasSelection || s ? 0.85 : 0.12)),
+        line: {
+          color: PLOT_TEXT,
+          width: selected.map((s) => (s ? 1 * scale : 0)),
+        },
+      },
+      selected: { marker: { opacity: 0.85 } },
+      unselected: { marker: { opacity: hasSelection ? 0.12 : 0.85 } },
+    };
 
-    svg
-      .append("text")
-      .attr("x", width - MARGIN.right)
-      .attr("y", height - 6)
-      .attr("text-anchor", "end")
-      .attr("font-size", 10)
-      .attr("fill", "currentColor")
-      .attr("opacity", 0.7)
-      .text(xSpec.label);
-    svg
-      .append("text")
-      .attr("x", 4)
-      .attr("y", 12)
-      .attr("font-size", 10)
-      .attr("fill", "currentColor")
-      .attr("opacity", 0.7)
-      .text(ySpec.label);
+    const axisFont = { size: BASE_FONT.tick * scale, color: PLOT_TEXT };
+    const titleFont = { size: BASE_FONT.axisTitle * scale, color: PLOT_TEXT };
 
-    const selection = state.selection;
-    const hasSelection = selection.size > 0;
+    const layoutObj = {
+      width,
+      height,
+      margin: {
+        l: MARGIN.l * (1 + (scale - 1) * 0.7),
+        r: MARGIN.r,
+        t: MARGIN.t,
+        b: MARGIN.b * (1 + (scale - 1) * 0.7),
+      },
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "rgba(0,0,0,0)",
+      dragmode: "select",
+      hovermode: "closest",
+      hoverlabel: {
+        bgcolor: "#ffffff",
+        bordercolor: PLOT_TEXT,
+        font: { size: BASE_FONT.hover * scale, color: PLOT_TEXT },
+      },
+      // Keeps zoom/pan/selection alive across re-renders triggered by
+      // recoloring or filter changes; changing which fields are plotted is
+      // the one time a stale zoom range would be actively misleading, so
+      // that's the one case this key changes.
+      uirevision: `${state.scatter.x}:${state.scatter.y}`,
+      xaxis: {
+        type: xSpec.log ? "log" : "linear",
+        title: { text: xSpec.label, font: titleFont, standoff: 6 * scale },
+        tickfont: axisFont,
+        gridcolor: "rgba(15, 23, 42, 0.08)",
+        zerolinecolor: "rgba(15, 23, 42, 0.15)",
+        linecolor: "rgba(15, 23, 42, 0.35)",
+        showline: true,
+      },
+      yaxis: {
+        type: ySpec.log ? "log" : "linear",
+        title: { text: ySpec.label, font: titleFont, standoff: 4 * scale },
+        tickfont: axisFont,
+        gridcolor: "rgba(15, 23, 42, 0.08)",
+        zerolinecolor: "rgba(15, 23, 42, 0.15)",
+        linecolor: "rgba(15, 23, 42, 0.35)",
+        showline: true,
+      },
+      font: { color: PLOT_TEXT },
+    };
 
-    svg
-      .append("g")
-      .selectAll("circle")
-      .data(points)
-      .join("circle")
-      .attr("cx", (d) => xScale(d.x))
-      .attr("cy", (d) => yScale(d.y))
-      .attr("r", (d) => (selection.has(d.n.id) ? 3.2 : 2.2))
-      .attr("fill", (d) => colorOf(d.n))
-      .attr("fill-opacity", (d) => (!hasSelection || selection.has(d.n.id) ? 0.85 : 0.12))
-      .attr("stroke", (d) => (selection.has(d.n.id) ? "currentColor" : "none"))
-      .attr("stroke-width", 0.8)
-      .on("mousemove", (event, d) => {
-        const rect = wrapRef.current.getBoundingClientRect();
-        setTooltip({
-          x: event.clientX - rect.left + 12,
-          y: event.clientY - rect.top + 12,
-          id: d.n.id,
-          rows: [
-            [xSpec.label, Number(d.x).toLocaleString()],
-            [ySpec.label, Number(d.y).toLocaleString()],
-          ],
-        });
-      })
-      .on("mouseleave", () => setTooltip(null))
-      .on("click", (event, d) => dispatch({ type: "inspector/lockNode", id: d.n.id }));
+    const configObj = {
+      displaylogo: false,
+      scrollZoom: true,
+      responsive: false,
+      modeBarButtonsToRemove: ["toggleSpikelines", "hoverCompareCartesian", "hoverClosestCartesian"],
+    };
 
-    // the brush writes into the shared selection
-    const brushBehavior = brush()
-      .extent([
-        [MARGIN.left, MARGIN.top],
-        [width - MARGIN.right, height - MARGIN.bottom],
-      ])
-      .on("end", (event) => {
-        if (!event.selection) return;
-        const [[x0, y0], [x1, y1]] = event.selection;
-        const ids = points
-          .filter((d) => {
-            const px = xScale(d.x);
-            const py = yScale(d.y);
-            return px >= x0 && px <= x1 && py >= y0 && py <= y1;
-          })
-          .map((d) => d.n.id);
-        dispatch({
-          type: "selection/set",
-          ids,
-          label: `${xSpec.label} × ${ySpec.label} brush`,
-        });
-      });
+    return { trace: traceObj, layout: layoutObj, config: configObj };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [points, selection, hasSelection, colorOf, width, height, scale, xSpec, ySpec, state.scatter.x, state.scatter.y]);
 
-    svg.append("g").attr("class", "scatter-brush").call(brushBehavior);
-  }, [model, size.width, size.height, isVisible, colorOf, state.scatter, state.selection, dispatch]);
+  const handleSelected = (event) => {
+    if (!event) return;
+    const ids = event.points.map((p) => p.customdata);
+    dispatch({
+      type: "selection/set",
+      ids,
+      label: `${xSpec.label} × ${ySpec.label} brush`,
+    });
+  };
+
+  const handleClick = (event) => {
+    const p = event?.points?.[0];
+    if (!p) return;
+    dispatch({ type: "inspector/lockNode", id: p.customdata });
+  };
 
   return (
     <div className={`ws-view ws-scatter${maximized ? " is-maximized" : ""}`}>
@@ -205,33 +215,30 @@ export function FeatureScatter({ derived }) {
         />
       </div>
       <div className="scatter-wrap" ref={wrapRef}>
-        <svg id="feature-scatter" ref={svgRef} role="img" aria-label="Contig feature scatter plot, brushable"></svg>
+        {points.length === 0 ? (
+          <div
+            id="feature-scatter"
+            className="scatter-empty"
+            role="img"
+            aria-label="Contig feature scatter plot, brushable"
+          >
+            No contigs with both features under the current filters.
+          </div>
+        ) : (
+          <Plot
+            divId="feature-scatter"
+            data={[trace]}
+            layout={layout}
+            config={config}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+            onSelected={handleSelected}
+            onClick={handleClick}
+          />
+        )}
         <ViewShimmer />
-        <div
-          id="scatter-tooltip"
-          className="tooltip"
-          style={
-            tooltip
-              ? { display: "block", left: `${tooltip.x}px`, top: `${tooltip.y}px` }
-              : { display: "none" }
-          }
-        >
-          {tooltip ? (
-            <>
-              <div>
-                <b>{tooltip.id}</b>
-              </div>
-              {tooltip.rows.map(([label, value]) => (
-                <div key={label}>
-                  {label}: {value}
-                </div>
-              ))}
-            </>
-          ) : null}
-        </div>
       </div>
       <div className="ws-view-note">
-        Drag to brush contigs; the graph and flow view follow.
+        Drag to brush contigs; scroll or use the toolbar to zoom — the graph and flow view follow.
       </div>
     </div>
   );

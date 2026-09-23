@@ -1356,12 +1356,6 @@ input[type="file"]:focus-visible{
   height: 100%;
 }
 
-.scatter-brush .selection{
-  fill: rgba(var(--brand-blue-rgb), 0.12);
-  stroke: rgb(var(--brand-blue-rgb));
-  stroke-width: 1;
-}
-
 .ws-flow .sankey-wrap{
   height: 300px;
   color: var(--plot-text);

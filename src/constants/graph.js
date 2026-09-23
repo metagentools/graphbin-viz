@@ -20,6 +20,12 @@ export const GRAPHBIN_DEFAULTS = {
 export const BRAND_BLUE = "#007fff";
 export const BRAND_RED = "#ff0000";
 
+/** The plot surfaces (feature scatter) stay light in both page themes, so
+ * these are plain hex values rather than the --plot-bg / --plot-text CSS
+ * vars: Plotly needs concrete colors it can hand to its own color parser. */
+export const PLOT_BG = "#ffffff";
+export const PLOT_TEXT = "#0f172a";
+
 /** Fill for a mark whose encoded value is missing. */
 export const NO_VALUE_COLOR = "#e3e7ee";
 
