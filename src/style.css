@@ -1333,7 +1333,13 @@ input[type="file"]:focus-visible{
   color: var(--plot-text);
 }
 
+/* Taken out of the flow on purpose. The plot is drawn to a viewBox measured
+   from this wrapper, and an in-flow SVG with height:100% falls back to sizing
+   itself from that viewBox's aspect ratio -- so the plot would size the box
+   that sizes the plot, and the card grew a little on every observed resize. */
 #feature-scatter{
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
