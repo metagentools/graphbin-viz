@@ -6,8 +6,11 @@ import { UNBINNED_LABEL } from "../../constants/graph.js";
 import { buildSankeyData, computeFlowStats } from "../../lib/sankeyData.js";
 import { colorForBin } from "../../lib/palette.js";
 import { useElementSize } from "../../hooks/useElementSize.js";
+import { buildExecutionUrl } from "../../lib/url.js";
+import { useExecution } from "../../state/executionStore.jsx";
 import { useView } from "../../state/viewStore.jsx";
 import { MaximizeButton } from "../common/MaximizeButton.jsx";
+import { OpenInNewWindowButton } from "../common/OpenInNewWindowButton.jsx";
 import { ViewShimmer } from "../common/Shimmers.jsx";
 import { FlowStats } from "./FlowStats.jsx";
 
@@ -22,6 +25,7 @@ import { FlowStats } from "./FlowStats.jsx";
 export function ContigFlow({ derived }) {
   const { model, results, binOf, binColors, unbinnedColor } = derived;
   const { state, dispatch } = useView();
+  const { executionId, isPopout } = useExecution();
   const wrapRef = useRef(null);
   const svgRef = useRef(null);
   const size = useElementSize(wrapRef);
@@ -159,6 +163,14 @@ export function ContigFlow({ derived }) {
     dispatch,
   ]);
 
+  const handleOpenNewWindow = () => {
+    window.open(
+      buildExecutionUrl({ executionId, maximize: "flow", popout: true }),
+      "_blank",
+      "noopener"
+    );
+  };
+
   return (
     <div className={`ws-view ws-flow${maximized ? " is-maximized" : ""}`}>
       <div className="ws-view-header">
@@ -191,6 +203,13 @@ export function ContigFlow({ derived }) {
             }
           />
         </div>
+        {isPopout ? null : (
+          <OpenInNewWindowButton
+            label="contig flow"
+            disabled={!executionId}
+            onOpen={handleOpenNewWindow}
+          />
+        )}
         <MaximizeButton
           label="contig flow"
           maximized={maximized}

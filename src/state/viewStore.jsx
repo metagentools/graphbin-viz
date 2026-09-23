@@ -106,6 +106,29 @@ function reducer(state, action) {
       };
     }
 
+    /* ------------------------- session restore ------------------------ */
+
+    // Applied right after "model/loaded" when opening a saved session: the
+    // encodings and filters the analyst had picked, layered onto the fresh
+    // baseline that action just set up. Selection, locks and replay position
+    // describe an in-progress analysis rather than the result itself, so
+    // they are not part of what gets restored.
+    case "view/restore": {
+      const patch = action.patch || {};
+      return {
+        ...state,
+        ...patch,
+        filters: { ...state.filters, ...(patch.filters || {}) },
+        markers: { ...state.markers, ...(patch.markers || {}) },
+        sankey: { ...state.sankey, ...(patch.sankey || {}) },
+        scatter: { ...state.scatter, ...(patch.scatter || {}) },
+        selection: new Set(),
+        selectionLabel: "",
+        overrides: new Map(),
+        lockedNodeId: null,
+      };
+    }
+
     /* --------------------------- encodings ---------------------------- */
 
     case "view/mode": {

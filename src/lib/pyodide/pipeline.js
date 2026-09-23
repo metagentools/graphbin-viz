@@ -12,6 +12,7 @@ import { GRAPHBIN_DEFAULTS } from "../../constants/graph.js";
 import { finishBenchmarkRun, nowMs, roundMs, startBenchmarkRun } from "../benchmark.js";
 import { getFileExtension } from "../download.js";
 import {
+  fileToBlob,
   fileToObjectUrl,
   getPyodide,
   getPyodideFileSize,
@@ -113,7 +114,15 @@ function collectPlots(pyodide, imgtype, log) {
       return null;
     }
     const path = "/out/" + file;
-    return { path, url: fileToObjectUrl(pyodide, path), ext: getFileExtension(path) };
+    // `blob` is what a saved session stores -- the object URL above only
+    // resolves in this document, but a Blob survives into IndexedDB and can
+    // be turned back into a fresh URL after a reload (see sessionSnapshot.js).
+    return {
+      path,
+      url: fileToObjectUrl(pyodide, path),
+      ext: getFileExtension(path),
+      blob: fileToBlob(pyodide, path),
+    };
   };
 
   return {

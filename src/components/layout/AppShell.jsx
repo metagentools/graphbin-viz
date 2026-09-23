@@ -6,11 +6,13 @@ import { Tab, TabList } from "@fluentui/react-tabs";
 import { useGraphBinRun } from "../../hooks/useGraphBinRun.js";
 import { useTheme } from "../../hooks/useTheme.js";
 import { initBenchmarkGlobals } from "../../lib/benchmark.js";
+import { useExecution } from "../../state/executionStore.jsx";
 import { ConfigPanel } from "../inputs/ConfigPanel.jsx";
 import { OutputTab } from "../output/OutputTab.jsx";
 import { Workspace } from "../workspace/Workspace.jsx";
 import { AppFooter } from "./AppFooter.jsx";
 import { AppHeader } from "./AppHeader.jsx";
+import { SessionsDialog } from "./SessionsDialog.jsx";
 import { ThemeToggle } from "./ThemeToggle.jsx";
 
 /**
@@ -23,10 +25,19 @@ export function AppShell() {
   const { start } = useGraphBinRun();
   const workspacePanelRef = useRef(null);
   const baseUrl = import.meta.env.BASE_URL || "/";
+  const { isRestored } = useExecution();
+  const [sessionsDialogOpen, setSessionsDialogOpen] = useState(false);
 
   useEffect(() => {
     initBenchmarkGlobals();
   }, []);
+
+  // Opening a saved session -- from the dialog, or from "?execution=" on
+  // load -- is worth switching to the workspace for; a fresh run merely
+  // finishing is not, so this only fires on the restore transition.
+  useEffect(() => {
+    if (isRestored) setActiveTab("interactive");
+  }, [isRestored]);
 
   // The flow diagram is sized against the whole workspace panel by CSS, so
   // publish that height for it to read.
@@ -64,7 +75,7 @@ export function AppShell() {
         <ThemeToggle theme={theme} onToggle={toggleTheme} />
         <AppHeader baseUrl={baseUrl} />
 
-        <ConfigPanel onRun={handleRun} />
+        <ConfigPanel onRun={handleRun} onOpenSessions={() => setSessionsDialogOpen(true)} />
 
         <section className="panel tab-shell">
           <div className="tab-header">
@@ -106,6 +117,8 @@ export function AppShell() {
             </div>
           </div>
         </section>
+
+        <SessionsDialog open={sessionsDialogOpen} onOpenChange={setSessionsDialogOpen} />
 
         <AppFooter />
       </div>

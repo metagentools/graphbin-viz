@@ -11,6 +11,7 @@ import { useCallback } from "react";
 import { finishBenchmarkRun } from "../lib/benchmark.js";
 import { lockedByContigName } from "../lib/curation.js";
 import { normaliseSettings, rerunRefinement, runPipeline } from "../lib/pyodide/pipeline.js";
+import { useExecution } from "../state/executionStore.jsx";
 import { useModel } from "../state/modelStore.jsx";
 import { useRun } from "../state/runStore.jsx";
 import { useSettings } from "../state/settingsStore.jsx";
@@ -21,6 +22,7 @@ export function useGraphBinRun() {
   const { model, loadModel, clearModel, setRunContext, runContext } = useModel();
   const { dispatch, state } = useView();
   const { settings, files } = useSettings();
+  const { requestSaveNew, requestSaveUpdate } = useExecution();
 
   /** Everything a run has to put back before it starts. */
   const resetForRun = useCallback(() => {
@@ -73,6 +75,10 @@ export function useGraphBinRun() {
           log(
             `Interactive graph loaded (nodes=${prepared.nodes.length}, edges=${prepared.edges.length}).`
           );
+          // Every finished run is a new execution: a fresh name, a fresh
+          // uuid, and a URL that can be reloaded, bookmarked or reopened in
+          // a second window onto exactly this result.
+          requestSaveNew(result.isExample);
         }
 
         finishBenchmarkRun(result.benchmark, {
@@ -100,6 +106,7 @@ export function useGraphBinRun() {
       setRunContext,
       loadModel,
       dispatch,
+      requestSaveNew,
     ]
   );
 
@@ -109,8 +116,14 @@ export function useGraphBinRun() {
    * being a cosmetic relabelling of one contig.
    */
   const rerunWithLocks = useCallback(async () => {
-    if (!model || !runContext) {
+    if (!model) {
       log("Run a dataset first, then re-run refinement with locked assignments.");
+      return;
+    }
+    if (!runContext) {
+      log(
+        "This is a saved session — re-running refinement needs the files from a fresh run, since the Pyodide session that produced it does not persist."
+      );
       return;
     }
     if (state.overrides.size === 0) {
@@ -133,11 +146,22 @@ export function useGraphBinRun() {
       // applied on top of it
       dispatch({ type: "model/loaded", model: prepared });
       log(`Refinement re-run complete with ${lockedCount} locked assignment(s) applied.`);
+      // Same working session, evolved — not a new job.
+      requestSaveUpdate();
     } catch (err) {
       console.error(err);
       log("Re-run failed: " + String(err));
     }
-  }, [model, runContext, state.overrides, log, statusController, loadModel, dispatch]);
+  }, [
+    model,
+    runContext,
+    state.overrides,
+    log,
+    statusController,
+    loadModel,
+    dispatch,
+    requestSaveUpdate,
+  ]);
 
   return { start, rerunWithLocks };
 }

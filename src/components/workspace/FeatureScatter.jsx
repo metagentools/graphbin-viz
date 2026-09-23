@@ -5,9 +5,12 @@ import { PLOT_TEXT } from "../../constants/graph.js";
 import { SCATTER_AXIS_OPTIONS } from "../../constants/encodings.js";
 import { SCATTER_FIELDS } from "../../lib/features.js";
 import { useElementSize } from "../../hooks/useElementSize.js";
+import { buildExecutionUrl } from "../../lib/url.js";
+import { useExecution } from "../../state/executionStore.jsx";
 import { useView } from "../../state/viewStore.jsx";
 import { Plot } from "../../lib/plotly.js";
 import { MaximizeButton } from "../common/MaximizeButton.jsx";
+import { OpenInNewWindowButton } from "../common/OpenInNewWindowButton.jsx";
 import { ViewShimmer } from "../common/Shimmers.jsx";
 
 const MARGIN = { l: 48, r: 16, t: 22, b: 36 };
@@ -45,6 +48,7 @@ const BASE_FONT = { tick: 10, axisTitle: 11.5, hover: 12 };
 export function FeatureScatter({ derived }) {
   const { model, isVisible, colorOf } = derived;
   const { state, dispatch } = useView();
+  const { executionId, isPopout } = useExecution();
   const wrapRef = useRef(null);
   const size = useElementSize(wrapRef);
 
@@ -176,6 +180,14 @@ export function FeatureScatter({ derived }) {
     dispatch({ type: "inspector/lockNode", id: p.customdata });
   };
 
+  const handleOpenNewWindow = () => {
+    window.open(
+      buildExecutionUrl({ executionId, maximize: "scatter", popout: true }),
+      "_blank",
+      "noopener"
+    );
+  };
+
   return (
     <div className={`ws-view ws-scatter${maximized ? " is-maximized" : ""}`}>
       <div className="ws-view-header">
@@ -206,6 +218,13 @@ export function FeatureScatter({ derived }) {
             ))}
           </Select>
         </div>
+        {isPopout ? null : (
+          <OpenInNewWindowButton
+            label="feature space"
+            disabled={!executionId}
+            onOpen={handleOpenNewWindow}
+          />
+        )}
         <MaximizeButton
           label="feature space"
           maximized={maximized}

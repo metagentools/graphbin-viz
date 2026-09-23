@@ -17,6 +17,7 @@
     "@fluentui/react-badge": "^9.5.6",
     "@fluentui/react-button": "^9.11.1",
     "@fluentui/react-checkbox": "^9.6.5",
+    "@fluentui/react-dialog": "^9.18.5",
     "@fluentui/react-icons": "^2.0.341",
     "@fluentui/react-input": "^9.8.7",
     "@fluentui/react-label": "^9.4.5",
@@ -49,6 +50,7 @@
     "@testing-library/user-event": "^14.5.2",
     "@vitejs/plugin-react": "^4.2.1",
     "@vitest/coverage-v8": "^2.1.5",
+    "fake-indexeddb": "^6.2.5",
     "jsdom": "^28.0.0",
     "vite": "^5.4.0",
     "vitest": "^2.1.5"

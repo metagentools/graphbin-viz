@@ -1111,11 +1111,12 @@ input[type="file"]:focus-visible{
   gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 8px;
-  /* the maximize button is pinned to this corner (see .ws-view-maximize)
+  /* the maximize button and the "open in a new window" button next to it
+     are pinned to this corner (see .ws-view-maximize / .ws-view-open-window)
      regardless of whether the title/controls below it wrap onto a second
-     line, so it always reads as the card's corner affordance. */
+     line, so they always read as the card's corner affordances. */
   position: relative;
-  padding-right: 34px;
+  padding-right: 66px;
 }
 
 .ws-view-title{
@@ -1159,6 +1160,12 @@ input[type="file"]:focus-visible{
   position: absolute;
   top: 0;
   right: 0;
+}
+
+.ws-view-open-window{
+  position: absolute;
+  top: 0;
+  right: 32px;
 }
 
 .ws-view-controls .fui-Select{
@@ -2033,6 +2040,11 @@ input[type="file"]:focus-visible{
   min-width: 28px;
 }
 
+.ws-view-open-window{
+  flex: 0 0 auto;
+  min-width: 28px;
+}
+
 .ws-bottom.has-maximized{
   position: relative;
 }
@@ -2099,4 +2111,77 @@ body.has-maximized-view{
   flex: 1 1 auto;
   height: auto;
   min-height: 0;
+}
+
+
+/* ---------------------------------------------------------------------
+   Saved sessions.
+
+   Every finished run is written to IndexedDB with a name and a uuid (see
+   state/executionStore.jsx); this dialog is the one place they are browsed
+   and reopened. The note below the run buttons says the same restored
+   session is on screen when there is nothing left in the input form to
+   show it.
+   --------------------------------------------------------------------- */
+
+.sessions-restored-note{
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.sessions-empty{
+  padding: 18px 4px;
+  color: var(--muted);
+  font-size: 13.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sessions-list{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.sessions-row{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-alt);
+}
+
+.sessions-row-main{
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sessions-row-name{
+  width: 100%;
+}
+
+.sessions-row-meta{
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.sessions-row-actions{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
 }

@@ -40,6 +40,10 @@ export function RunProvider({ children }) {
 
   const resetLog = useCallback(() => setLogText(""), []);
 
+  // Restoring a saved session replaces the whole log in one go, unlike
+  // `log`, which appends a line to a run in progress.
+  const loadLog = useCallback((text) => setLogText(text || EMPTY_LOG), []);
+
   const setStatus = useCallback((msg) => {
     statusBuffer.current = [];
     setStatusText(String(msg ?? ""));
@@ -86,12 +90,13 @@ export function RunProvider({ children }) {
       logText,
       log,
       resetLog,
+      loadLog,
       statusText,
       statusController,
       plots,
       setPlots,
     }),
-    [running, logText, log, resetLog, statusText, statusController, plots]
+    [running, logText, log, resetLog, loadLog, statusText, statusController, plots]
   );
 
   return <RunContext.Provider value={value}>{children}</RunContext.Provider>;
