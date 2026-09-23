@@ -89,30 +89,54 @@ async function clickFirstFlow(page) {
   await page.locator("#sankey-svg path").first().click({ force: true });
 }
 
-/** Click over the canvas until a contig is hit; returns its canvas position. */
+/**
+ * Click a contig on the canvas; returns the position that hit one.
+ *
+ * The canvas is cleared to transparent, so any pixel with alpha is a mark —
+ * which makes the drawn marks themselves the list of places worth clicking.
+ * Each click is a separate step because the inspector is React state: it
+ * renders on the next frame rather than inside the dispatch.
+ */
 async function findContigPoint(page) {
-  return page.evaluate(() => {
+  const candidates = await page.evaluate(() => {
     const canvas = document.getElementById("graph-canvas");
     const rect = canvas.getBoundingClientRect();
-    for (let y = 4; y < rect.height; y += 4) {
-      for (let x = 4; x < rect.width; x += 4) {
-        const ev = new MouseEvent("click", {
-          clientX: rect.left + x,
-          clientY: rect.top + y,
-          bubbles: true,
-        });
-        Object.defineProperty(ev, "offsetX", { get: () => x });
-        Object.defineProperty(ev, "offsetY", { get: () => y });
-        canvas.dispatchEvent(ev);
-        // the record is open only when the panel shows a contig heading --
-        // the summary also lists contig ids, so text alone is not enough
-        if (document.querySelector("#prov-panel .prov-id")) {
-          return { x, y };
+    const ctx = canvas.getContext("2d");
+    const { width, height } = canvas;
+    const { data } = ctx.getImageData(0, 0, width, height);
+    const scaleX = rect.width / width;
+    const scaleY = rect.height / height;
+
+    const points = [];
+    for (let y = 0; y < height && points.length < 60; y += 3) {
+      for (let x = 0; x < width && points.length < 60; x += 3) {
+        if (data[(y * width + x) * 4 + 3] > 200) {
+          points.push({ x: Math.round(x * scaleX), y: Math.round(y * scaleY) });
         }
       }
     }
-    return null;
+    return points;
   });
+
+  for (const point of candidates) {
+    await page.evaluate(({ x, y }) => {
+      const canvas = document.getElementById("graph-canvas");
+      const rect = canvas.getBoundingClientRect();
+      const ev = new MouseEvent("click", {
+        clientX: rect.left + x,
+        clientY: rect.top + y,
+        bubbles: true,
+      });
+      Object.defineProperty(ev, "offsetX", { get: () => x });
+      Object.defineProperty(ev, "offsetY", { get: () => y });
+      canvas.dispatchEvent(ev);
+    }, point);
+
+    // the record is open only when the panel shows a contig heading -- the
+    // summary also lists contig ids, so text alone is not enough
+    if (await page.locator("#prov-panel .prov-id").count()) return point;
+  }
+  return null;
 }
 
 test("shows the graph, feature space and flow view at once", async ({ page }) => {
