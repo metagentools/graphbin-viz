@@ -175,13 +175,16 @@ test("explains how a contig's bin was decided", async ({ page }) => {
 test("a selection made in one view reaches the others", async ({ page }) => {
   const errors = await openWorkspace(page);
 
-  await expect(page.locator("#selection-summary")).toHaveText("");
+  // the selection is published on the workspace rather than written out in
+  // the toolbar, which used to wrap and shove the graph down
+  const ws = page.locator("#workspace");
+  await expect(ws).not.toHaveAttribute("data-selected", /.*/);
 
   await clickFirstFlow(page);
-  await expect(page.locator("#selection-summary")).toContainText("contigs selected");
+  await expect(ws).toHaveAttribute("data-selected", /^[1-9][0-9]*$/);
 
   await page.click("#clear-selection");
-  await expect(page.locator("#selection-summary")).toHaveText("");
+  await expect(ws).not.toHaveAttribute("data-selected", /.*/);
 
   expect(errors).toEqual([]);
 });
@@ -208,12 +211,15 @@ test("encoding channels and propagation replay redraw cleanly", async ({ page })
   await slider.fill(max);
   await expect(page.locator("#replay-value")).toContainText("final");
 
-  const toggle = (id) => page.locator(`label.chip:has(#${id}) span`).click();
+  // the filters are Fluent ToggleButtons, so "on" is aria-pressed
+  const toggle = (id) => page.locator(`#${id}`).click();
+  const pressed = (id) =>
+    expect(page.locator(`#${id}`)).toHaveAttribute("aria-pressed", "true");
   await toggle("toggle-low-confidence");
-  await expect(page.locator("#toggle-low-confidence")).toBeChecked();
+  await pressed("toggle-low-confidence");
   await toggle("toggle-low-confidence");
   await toggle("toggle-only-disputed");
-  await expect(page.locator("#toggle-only-disputed")).toBeChecked();
+  await pressed("toggle-only-disputed");
   await toggle("toggle-only-disputed");
 
   expect(errors).toEqual([]);
@@ -251,15 +257,37 @@ test("assignments can be locked and the curated binning exported", async ({ page
 test("the summary offers a way into the contested contigs", async ({ page }) => {
   const errors = await openWorkspace(page);
 
+  const ws = page.locator("#workspace");
+  const someSelected = () =>
+    expect(ws).toHaveAttribute("data-selected", /^[1-9][0-9]*$/);
+
   // the decision-stage breakdown selects the contigs it describes
   await page.locator("#prov-panel .sum-row").first().click();
-  await expect(page.locator("#selection-summary")).toContainText("contigs selected");
+  await someSelected();
   await page.click("#clear-selection");
 
   // so does a confidence bucket
   await page.locator("#prov-panel .sum-hist-row:not([disabled])").first().click();
-  await expect(page.locator("#selection-summary")).toContainText("contigs selected");
+  await someSelected();
   await page.click("#clear-selection");
+
+  // the callout selects the whole contested set, and undoes itself
+  const callout = page.locator("#sum-select-disputed");
+  if (await callout.count()) {
+    await expect(callout).toHaveText("Select all");
+    await callout.click();
+    await expect(ws).toHaveAttribute("data-selection-label", "tools disagree");
+    await expect(callout).toHaveText("Deselect all");
+    await callout.click();
+    await expect(ws).not.toHaveAttribute("data-selected", /.*/);
+    await expect(callout).toHaveText("Select all");
+
+    // a selection made elsewhere is not this one, so it offers to select again
+    await callout.click();
+    await page.locator("#prov-panel .sum-row").first().click();
+    await expect(callout).toHaveText("Select all");
+    await page.click("#clear-selection");
+  }
 
   // and a row in "needs attention" opens that contig's record
   const rows = page.locator("#prov-panel .sum-attention-row");
@@ -370,29 +398,37 @@ test("confidence is a colour channel rather than a second marker", async ({ page
   expect(errors).toEqual([]);
 });
 
-test("range tracks fill their whole width at the ends", async ({ page }) => {
+test("slider rails fill their whole width at the ends", async ({ page }) => {
   const errors = await openWorkspace(page);
 
-  const fill = (id) =>
-    page.locator(`#${id}`).evaluate((el) => el.style.getPropertyValue("--fill"));
+  // A Fluent Slider publishes its position to its own rail as a percentage,
+  // which is what makes the track read as complete at the maximum rather
+  // than a thumb-width short. Read it off the rail the same way the
+  // stylesheet does.
+  const progress = (id) =>
+    page
+      .locator(`#${id}`)
+      .evaluate((el) =>
+        getComputedStyle(el.closest(".fui-Slider")).getPropertyValue(
+          "--fui-Slider--progress"
+        ).trim()
+      );
 
   await page.selectOption("#view-mode", { label: "GraphBin" });
   const slider = page.locator("#replay-slider");
   const max = await slider.getAttribute("max");
 
-  // at the maximum the track reads as complete, not a thumb-width short
   await slider.fill(max);
-  expect(await fill("replay-slider")).toBe("100%");
+  expect(await progress("replay-slider")).toBe("100%");
 
-  // and as empty at the minimum
   await slider.fill("0");
-  expect(await fill("replay-slider")).toBe("0%");
+  expect(await progress("replay-slider")).toBe("0%");
 
-  // the node size slider is painted the same way
+  // the node size slider is driven the same way
   await page.locator("#node-size").fill("16");
-  expect(await fill("node-size")).toBe("100%");
+  expect(await progress("node-size")).toBe("100%");
   await page.locator("#node-size").fill("2");
-  expect(await fill("node-size")).toBe("0%");
+  expect(await progress("node-size")).toBe("0%");
 
   expect(errors).toEqual([]);
 });
@@ -400,7 +436,7 @@ test("range tracks fill their whole width at the ends", async ({ page }) => {
 test("marker overlays are off until switched on from the toolbar", async ({ page }) => {
   const errors = await openWorkspace(page);
 
-  const toggle = (id) => page.locator(`label.chip:has(#${id}) span`).click();
+  const toggle = (id) => page.locator(`#${id}`).click();
 
   // nothing is marked on arrival, and the legend describes only what is drawn
   for (const id of [
@@ -408,21 +444,30 @@ test("marker overlays are off until switched on from the toolbar", async ({ page
     "toggle-mark-misbinned",
     "toggle-mark-ambiguous",
   ]) {
-    await expect(page.locator(`#${id}`)).not.toBeChecked();
+    await expect(page.locator(`#${id}`)).toHaveAttribute(
+      "aria-pressed",
+      "false"
+    );
   }
   await expect(page.locator("#bin-legend")).not.toContainText(
     "Changed by refinement"
   );
 
   await toggle("toggle-mark-changed");
-  await expect(page.locator("#toggle-mark-changed")).toBeChecked();
+  await expect(page.locator("#toggle-mark-changed")).toHaveAttribute(
+    "aria-pressed",
+    "true"
+  );
   await expect(page.locator("#bin-legend")).toContainText("Changed by refinement");
 
   await toggle("toggle-mark-misbinned");
   await expect(page.locator("#bin-legend")).toContainText("Likely misbinned");
 
   await toggle("toggle-mark-changed");
-  await expect(page.locator("#toggle-mark-changed")).not.toBeChecked();
+  await expect(page.locator("#toggle-mark-changed")).toHaveAttribute(
+    "aria-pressed",
+    "false"
+  );
   await expect(page.locator("#bin-legend")).not.toContainText(
     "Changed by refinement"
   );
@@ -463,17 +508,16 @@ test("filtering asks about disagreement; refinement changes are a marker", async
   const errors = await openWorkspace(page);
 
   // one filter for the cross-result question
-  await expect(
-    page.locator("label.chip:has(#toggle-only-disputed)")
-  ).toBeVisible();
+  await expect(page.locator("#toggle-only-disputed")).toBeVisible();
   // and no second filter repeating what the marker already offers
   await expect(page.locator("#toggle-only-changed")).toHaveCount(0);
-  await expect(
-    page.locator("label.chip:has(#toggle-mark-changed)")
-  ).toBeVisible();
+  await expect(page.locator("#toggle-mark-changed")).toBeVisible();
 
-  await page.locator("label.chip:has(#toggle-only-disputed) span").click();
-  await expect(page.locator("#toggle-only-disputed")).toBeChecked();
+  await page.locator("#toggle-only-disputed").click();
+  await expect(page.locator("#toggle-only-disputed")).toHaveAttribute(
+    "aria-pressed",
+    "true"
+  );
 
   expect(errors).toEqual([]);
 });

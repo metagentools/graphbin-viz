@@ -9,7 +9,9 @@ test("workspace controls are available", async ({ page }) => {
 
   await page.getByRole("tab", { name: /Workspace/i }).click();
 
-  await expect(page.getByLabel("Hide isolated")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Hide isolated" })
+  ).toBeVisible();
   await expect(page.locator("#graph-canvas")).toBeVisible();
 
   // the graph, the feature space and the flow view are shown together
