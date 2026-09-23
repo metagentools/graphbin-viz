@@ -13,6 +13,8 @@ import { Badge } from "@fluentui/react-badge";
 import { Spinner } from "@fluentui/react-spinner";
 import { SkeletonItem } from "@fluentui/react-skeleton";
 import {
+  ArrowMaximizeRegular,
+  ArrowMinimizeRegular,
   QuestionCircleRegular,
   WeatherMoonRegular,
   WeatherSunnyRegular,
@@ -77,6 +79,27 @@ function HelpTip({ label, children }) {
         type="button"
         icon={<QuestionCircleRegular />}
         aria-label={label}
+      />
+    </Tooltip>
+  );
+}
+
+/* The two lower views can each take over the screen. The button reads as the
+   corner affordance of the card it belongs to, so it sits last in that card's
+   header controls. */
+function MaximizeButton({ maximized, onToggle, label }) {
+  const title = maximized ? "Exit full screen" : `Maximise ${label}`;
+  return (
+    <Tooltip content={title} relationship="label" withArrow>
+      <Button
+        className="ws-view-maximize"
+        appearance="subtle"
+        size="small"
+        type="button"
+        icon={maximized ? <ArrowMinimizeRegular /> : <ArrowMaximizeRegular />}
+        aria-label={title}
+        aria-pressed={maximized}
+        onClick={onToggle}
       />
     </Tooltip>
   );
@@ -299,8 +322,34 @@ export default function App() {
   // Fluent theming is a prop, not a stylesheet, so the appearance lives in
   // state; data-theme stays on <html> for the app's own rules.
   const [appearance, setAppearance] = useState("light");
+  // which of the two lower views, if any, is filling the screen
+  const [maximizedView, setMaximizedView] = useState(null);
   const baseUrl = import.meta.env.BASE_URL || "/";
   const themeButtonRef = useRef(null);
+
+  // Escape leaves full screen, and the page behind it should not scroll away
+  // under the overlay.
+  useEffect(() => {
+    if (!maximizedView) return undefined;
+    const onKey = (event) => {
+      if (event.key === "Escape") setMaximizedView(null);
+    };
+    window.addEventListener("keydown", onKey);
+    document.body.classList.add("has-maximized-view");
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.classList.remove("has-maximized-view");
+    };
+  }, [maximizedView]);
+
+  // Both plots measure their container when they draw, so they need a nudge
+  // once the new layout has settled. They already redraw on window resize.
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      window.dispatchEvent(new Event("resize"));
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [maximizedView]);
 
   useEffect(() => {
     initApp();
@@ -892,8 +941,15 @@ export default function App() {
                   </div>
 
                   {/* ---------- linked lower views ---------- */}
-                  <div className="ws-bottom" id="ws-bottom">
-                    <div className="ws-view ws-scatter">
+                  <div
+                    className={`ws-bottom${maximizedView ? " has-maximized" : ""}`}
+                    id="ws-bottom"
+                  >
+                    <div
+                      className={`ws-view ws-scatter${
+                        maximizedView === "scatter" ? " is-maximized" : ""
+                      }`}
+                    >
                       <div className="ws-view-header">
                         <span className="ws-view-title">Feature space</span>
                         <div className="ws-view-controls">
@@ -909,6 +965,15 @@ export default function App() {
                             <option value="len">Length</option>
                             <option value="confidence">Confidence</option>
                           </Select>
+                          <MaximizeButton
+                            label="feature space"
+                            maximized={maximizedView === "scatter"}
+                            onToggle={() =>
+                              setMaximizedView((prev) =>
+                                prev === "scatter" ? null : "scatter"
+                              )
+                            }
+                          />
                         </div>
                       </div>
                       <div className="scatter-wrap">
@@ -929,7 +994,11 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div className="ws-view ws-flow">
+                    <div
+                      className={`ws-view ws-flow${
+                        maximizedView === "flow" ? " is-maximized" : ""
+                      }`}
+                    >
                       <div className="ws-view-header">
                         <span className="ws-view-title">Contig flow between results</span>
                         <div className="ws-view-controls">
@@ -944,6 +1013,15 @@ export default function App() {
                             className="cb"
                             size="medium"
                             label="Hide unbinned"
+                          />
+                          <MaximizeButton
+                            label="contig flow"
+                            maximized={maximizedView === "flow"}
+                            onToggle={() =>
+                              setMaximizedView((prev) =>
+                                prev === "flow" ? null : "flow"
+                              )
+                            }
                           />
                         </div>
                       </div>

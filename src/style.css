@@ -2006,3 +2006,86 @@ input[type="file"]:focus-visible{
 .replay-bar .fui-Slider__rail::before{
   background-image: none;
 }
+
+
+/* ---------------------------------------------------------------------
+   Full-screen lower views.
+
+   Either of the two lower views can take over the viewport. It keeps its
+   own markup so its plot redraws in place — it is measured against its
+   wrapper, which simply becomes much larger — and the other view is hidden
+   rather than removed, so nothing has to be rebuilt on the way back.
+   --------------------------------------------------------------------- */
+
+.ws-view-maximize{
+  flex: 0 0 auto;
+  min-width: 28px;
+}
+
+.ws-bottom.has-maximized{
+  position: relative;
+}
+
+.ws-bottom.has-maximized > .ws-view:not(.is-maximized){
+  visibility: hidden;
+}
+
+.ws-view.is-maximized{
+  position: fixed;
+  inset: 16px;
+  z-index: 60;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 16px;
+  background: var(--panel);
+  border-color: var(--border-strong, var(--border));
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.ws-view.is-maximized .ws-view-header{
+  margin-bottom: 0;
+  flex: 0 0 auto;
+}
+
+.ws-view.is-maximized .flow-stats,
+.ws-view.is-maximized .ws-view-note{
+  flex: 0 0 auto;
+}
+
+/* the plot itself takes every pixel the card is not using */
+.ws-view.is-maximized .scatter-wrap,
+.ws-view.is-maximized .sankey-wrap{
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+
+body.has-maximized-view{
+  overflow: hidden;
+}
+
+@media (max-width: 900px){
+  .ws-view.is-maximized{
+    inset: 8px;
+    padding: 12px;
+  }
+}
+
+/* the flow diagram shares its wrapper with the endpoint labels above it */
+.ws-view.is-maximized .sankey-wrap{
+  display: flex;
+  flex-direction: column;
+}
+
+.ws-view.is-maximized #sankey-title-row{
+  flex: 0 0 auto;
+}
+
+.ws-view.is-maximized #sankey-svg{
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
