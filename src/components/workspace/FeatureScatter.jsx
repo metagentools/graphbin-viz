@@ -195,14 +195,14 @@ export function FeatureScatter({ derived }) {
               </option>
             ))}
           </Select>
-          <MaximizeButton
-            label="feature space"
-            maximized={maximized}
-            onToggle={() =>
-              dispatch({ type: "chrome/maximize", value: maximized ? null : "scatter" })
-            }
-          />
         </div>
+        <MaximizeButton
+          label="feature space"
+          maximized={maximized}
+          onToggle={() =>
+            dispatch({ type: "chrome/maximize", value: maximized ? null : "scatter" })
+          }
+        />
       </div>
       <div className="scatter-wrap" ref={wrapRef}>
         <svg id="feature-scatter" ref={svgRef} role="img" aria-label="Contig feature scatter plot, brushable"></svg>

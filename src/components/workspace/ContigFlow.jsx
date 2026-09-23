@@ -190,14 +190,14 @@ export function ContigFlow({ derived }) {
               })
             }
           />
-          <MaximizeButton
-            label="contig flow"
-            maximized={maximized}
-            onToggle={() =>
-              dispatch({ type: "chrome/maximize", value: maximized ? null : "flow" })
-            }
-          />
         </div>
+        <MaximizeButton
+          label="contig flow"
+          maximized={maximized}
+          onToggle={() =>
+            dispatch({ type: "chrome/maximize", value: maximized ? null : "flow" })
+          }
+        />
       </div>
 
       <FlowStats stats={stats} />

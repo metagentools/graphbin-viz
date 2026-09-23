@@ -1111,6 +1111,11 @@ input[type="file"]:focus-visible{
   gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 8px;
+  /* the maximize button is pinned to this corner (see .ws-view-maximize)
+     regardless of whether the title/controls below it wrap onto a second
+     line, so it always reads as the card's corner affordance. */
+  position: relative;
+  padding-right: 34px;
 }
 
 .ws-view-title{
@@ -1148,6 +1153,12 @@ input[type="file"]:focus-visible{
   align-items: center;
   gap: 8px;
   flex-wrap: nowrap;
+}
+
+.ws-view-maximize{
+  position: absolute;
+  top: 0;
+  right: 0;
 }
 
 .ws-view-controls .fui-Select{
