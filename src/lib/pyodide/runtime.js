@@ -11,6 +11,57 @@ import { getFileExtension, mimeForExtension } from "../download.js";
 import { roundMs } from "../benchmark.js";
 
 const PYODIDE_INDEX_URL = "https://cdn.jsdelivr.net/pyodide/v0.29.0/full/";
+const PYODIDE_SCRIPT_URL = PYODIDE_INDEX_URL + "pyodide.js";
+const PYODIDE_SCRIPT_TIMEOUT_MS = 30_000;
+
+/**
+ * `loadPyodide` used to be defined by a blocking <script> tag in index.html,
+ * loaded on every page view whether or not the user ever runs anything. That
+ * had two problems: a slow/unreachable CDN request blocked the whole page
+ * from bootstrapping (this is what broke CI - the request hangs rather than
+ * failing fast on GitHub Actions' network, so the app never mounted and every
+ * e2e test timed out waiting for "Interactive graph loaded"), and the e2e
+ * tests' Pyodide stub (window.loadPyodide, set via addInitScript before the
+ * CDN script could run) was always one race away from being overwritten by
+ * the real thing.
+ *
+ * Loading it lazily, only when a run actually starts, and skipping the
+ * network entirely when something (a test stub, or a future offline runtime)
+ * has already defined window.loadPyodide, fixes both: normal page loads and
+ * tests never touch the CDN unless and until they need it, and a genuinely
+ * unreachable CDN now fails fast and visibly instead of hanging.
+ */
+function ensureLoadPyodide() {
+  if (typeof window.loadPyodide === "function") return Promise.resolve();
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = PYODIDE_SCRIPT_URL;
+
+    const timer = setTimeout(() => {
+      script.remove();
+      reject(
+        new Error(
+          `Timed out loading the Pyodide runtime from ${PYODIDE_SCRIPT_URL} after ${
+            PYODIDE_SCRIPT_TIMEOUT_MS / 1000
+          }s. Check your network connection and try again.`
+        )
+      );
+    }, PYODIDE_SCRIPT_TIMEOUT_MS);
+
+    script.onload = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+    script.onerror = () => {
+      clearTimeout(timer);
+      script.remove();
+      reject(new Error(`Failed to load the Pyodide runtime from ${PYODIDE_SCRIPT_URL}.`));
+    };
+
+    document.head.appendChild(script);
+  });
+}
 
 const PY_DIRS = ["/py", "/py/graphbin", "/py/graphbin/parsers", "/py/graphbin/labelpropagation", "/data", "/out"];
 
@@ -38,6 +89,7 @@ export function getPyodide(log = () => {}) {
 
   pyodideReady = (async () => {
     log("Loading Pyodide...");
+    await ensureLoadPyodide();
     const pyodide = await loadPyodide({ indexURL: PYODIDE_INDEX_URL });
 
     log("Loading igraph + matplotlib...");
