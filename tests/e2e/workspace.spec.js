@@ -146,7 +146,9 @@ test("shows the graph, feature space and flow view at once", async ({ page }) =>
   await expect(page.locator("#feature-scatter")).toBeVisible();
   await expect(page.locator("#sankey-svg")).toBeVisible();
 
-  expect(await page.locator("#feature-scatter circle").count()).toBeGreaterThan(5);
+  // Plotly renders each marker as an SVG path (class "point"), not a
+  // <circle> — this view moved off hand-rolled d3/SVG onto Plotly.
+  expect(await page.locator("#feature-scatter .point").count()).toBeGreaterThan(5);
   expect(await page.locator("#sankey-svg path").count()).toBeGreaterThan(0);
 
   expect(errors).toEqual([]);
