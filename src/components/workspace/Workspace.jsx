@@ -100,20 +100,23 @@ export function Workspace() {
         <WorkspaceToolbar results={results} />
 
         <GraphView ref={graphRef} derived={derived} />
-
-        <div
-          className={`ws-bottom${state.maximizedView ? " has-maximized" : ""}`}
-          id="ws-bottom"
-        >
-          <FeatureScatter derived={derived} />
-          <ContigFlow derived={derived} />
-        </div>
       </div>
 
       <aside className="ws-rail ws-rail-right">
         <Inspector derived={derived} onOpenContig={openContig} />
         <CurationPanel derived={derived} />
       </aside>
+
+      {/* The lower views sit on their own row under both columns: they read
+          the same selection as the graph, and at full width the scatter and
+          the flow diagram each get the room their density needs. */}
+      <div
+        className={`ws-bottom${state.maximizedView ? " has-maximized" : ""}`}
+        id="ws-bottom"
+      >
+        <FeatureScatter derived={derived} />
+        <ContigFlow derived={derived} />
+      </div>
     </div>
   );
 }
