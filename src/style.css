@@ -1441,7 +1441,9 @@ input[type="file"]:focus-visible{
 .inspector{
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  /* Matches .ws-main's head-to-body gap so the summary card lines up with
+     the graph column's toolbar, both starting level with the other. */
+  gap: 14px;
   min-height: 0;
   flex: 1 1 auto;
 }

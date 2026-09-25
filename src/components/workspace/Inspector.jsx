@@ -28,7 +28,12 @@ export function Inspector({ derived, onOpenContig }) {
           type="button"
           size="small"
           appearance="transparent"
-          hidden={!showRecord}
+          // Kept in the layout (not `hidden`, which collapses it) so the
+          // head row stays the same height as the graph's, whose title sits
+          // level with this one whether or not a record is open.
+          style={{ visibility: showRecord ? "visible" : "hidden" }}
+          aria-hidden={!showRecord}
+          tabIndex={showRecord ? 0 : -1}
           onClick={() => dispatch({ type: "inspector/lockNode", id: null })}
         >
           Back to summary

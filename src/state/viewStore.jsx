@@ -70,6 +70,7 @@ function clearedSelection(state) {
     ...state,
     selection: new Set(),
     selectionLabel: "",
+    lockedNodeId: null,
     sankey: { ...state.sankey, locked: null },
   };
 }
