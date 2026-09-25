@@ -103,6 +103,18 @@ export function featureNorm(extents, field, value) {
   return (l - a) / (b - a);
 }
 
+/**
+ * Human-readable rendering of a raw feature value, matching the units shown
+ * in the per-contig tooltip so the legend and the tooltip never disagree.
+ */
+export function formatFeatureValue(field, value) {
+  if (typeof value !== "number" || !isFinite(value)) return null;
+  if (field === "len") return `${Math.round(value).toLocaleString()}bp`;
+  if (field === "gc") return `${value.toFixed(1)}%`;
+  if (field === "cov") return `${value.toFixed(1)}×`;
+  return String(value);
+}
+
 /** Fill colour for a contig under the active colour channel. */
 export function createColorForNode({ colorMode, mode, binOf, binColors, extents, unbinnedColor }) {
   const palette = stagePalette();

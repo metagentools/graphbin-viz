@@ -3,7 +3,7 @@ import React from "react";
 import { BRAND_BLUE, BRAND_RED, UNBINNED_COLOR } from "../../constants/graph.js";
 import { RAMP_CAPTIONS } from "../../constants/encodings.js";
 import { stagePalette } from "../../constants/stages.js";
-import { RAMP_INTERPOLATORS, seqColor } from "../../lib/palette.js";
+import { RAMP_INTERPOLATORS, formatFeatureValue, seqColor } from "../../lib/palette.js";
 import { useView } from "../../state/viewStore.jsx";
 
 function LegendRow({ label, color, variant = "solid" }) {
@@ -18,10 +18,43 @@ function LegendRow({ label, color, variant = "solid" }) {
   );
 }
 
-function LegendRamp({ mode }) {
+/**
+ * One end of the ramp, broken into fixed lines (each caption word, then the
+ * value) rather than left to wrap -- wrapping puts a different number of
+ * lines on each side depending on how the two caption strings happen to
+ * break, which reads as misaligned. Splitting explicitly keeps both ends the
+ * same shape.
+ */
+function RampEnd({ caption, value, align }) {
+  const [first, ...rest] = caption.split(" ");
+  const lines = [first];
+  if (rest.length) lines.push(rest.join(" "));
+  if (value) lines.push(`(${value})`);
+
+  return (
+    <div className={`legend-ramp-end legend-ramp-end-${align}`}>
+      {lines.map((line, i) => (
+        <span key={i} className="legend-ramp-line">
+          {line}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function LegendRamp({ mode, extents }) {
   const interpolator = RAMP_INTERPOLATORS[mode];
   const captions = RAMP_CAPTIONS[mode];
   const stops = Array.from({ length: 11 }, (_, i) => seqColor(interpolator, i / 10));
+
+  // For the raw-data channels the two ends of the ramp are only useful if
+  // they say what "low" and "high" actually mean for this dataset -- a bare
+  // "low"/"high" caption doesn't tell you whether coverage tops out at 8x or
+  // 800x.
+  const [lo, hi] = extents?.[mode] || [];
+  const loText = formatFeatureValue(mode, lo);
+  const hiText = formatFeatureValue(mode, hi);
+
   return (
     <div className="legend-ramp">
       <div
@@ -29,8 +62,8 @@ function LegendRamp({ mode }) {
         style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}
       ></div>
       <div className="legend-ramp-labels">
-        <span>{captions[0]}</span>
-        <span>{captions[1]}</span>
+        <RampEnd caption={captions[0]} value={loText} align="start" />
+        <RampEnd caption={captions[1]} value={hiText} align="end" />
       </div>
     </div>
   );
@@ -40,7 +73,7 @@ function LegendRamp({ mode }) {
  * The legend is a key, not a control: it describes what is currently drawn, so
  * a marker appears here only while that marker is switched on.
  */
-export function GraphLegend({ binColors }) {
+export function GraphLegend({ binColors, extents }) {
   const { state } = useView();
   const { colorMode, markers } = state;
 
@@ -59,7 +92,7 @@ export function GraphLegend({ binColors }) {
   if (RAMP_INTERPOLATORS[colorMode]) {
     return (
       <div id="bin-legend" className="bin-legend">
-        <LegendRamp mode={colorMode} />
+        <LegendRamp mode={colorMode} extents={extents} />
       </div>
     );
   }

@@ -1896,8 +1896,29 @@ input[type="file"]:focus-visible{
 .legend-ramp-labels{
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   font-size: 10.5px;
   color: var(--muted);
+}
+
+.legend-ramp-end{
+  display: flex;
+  flex-direction: column;
+  line-height: 1.4;
+}
+
+.legend-ramp-end-start{
+  align-items: flex-start;
+  text-align: left;
+}
+
+.legend-ramp-end-end{
+  align-items: flex-end;
+  text-align: right;
+}
+
+.legend-ramp-line{
+  white-space: nowrap;
 }
 
 .bin-legend-swatch.legend-changed{

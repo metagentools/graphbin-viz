@@ -38,11 +38,11 @@ export function ReplayBar({ available, active }) {
     hint =
       model && max > 0
         ? `Available on the ${resultName(model, state.refinedKey)} result, which propagation produced.`
-        : "Step through how labels spread outwards from the seeds.";
+        : "Step through how labels spread outwards from labelled to unlabelled nodes.";
   } else {
     hint = active
       ? "Showing labels as they spread; result markers are hidden until the end."
-      : "Step through how labels spread outwards from the seeds.";
+      : "Step through how labels spread outwards from labelled to unlabelled nodes.";
   }
 
   return (

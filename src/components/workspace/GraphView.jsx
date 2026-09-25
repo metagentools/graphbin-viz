@@ -21,8 +21,19 @@ import { ReplayBar } from "./ReplayBar.jsx";
  * like, and nothing redraws behind React's back.
  */
 export const GraphView = forwardRef(function GraphView({ derived }, ref) {
-  const { model, spatial, binColors, results, binOf, isVisible, colorOf, sizeOf, replayActive, replayAvailable } =
-    derived;
+  const {
+    model,
+    spatial,
+    binColors,
+    extents,
+    results,
+    binOf,
+    isVisible,
+    colorOf,
+    sizeOf,
+    replayActive,
+    replayAvailable,
+  } = derived;
   const { state, dispatch } = useView();
 
   const wrapRef = useRef(null);
@@ -259,7 +270,7 @@ export const GraphView = forwardRef(function GraphView({ derived }, ref) {
           >
             Legend
           </button>
-          <GraphLegend binColors={binColors} />
+          <GraphLegend binColors={binColors} extents={extents} />
         </div>
       </div>
 
