@@ -17,6 +17,13 @@ export const SIZE_MODES = [
   { value: "degree", label: "Degree" },
 ];
 
+/** Size modes drawn as a growing-dot ramp, and what the two ends mean. */
+export const SIZE_CAPTIONS = {
+  len: ["short", "long"],
+  cov: ["low coverage", "high coverage"],
+  degree: ["few connections", "many connections"],
+};
+
 /** Colour modes drawn as a continuous ramp, and what the two ends mean. */
 export const RAMP_CAPTIONS = {
   confidence: ["high confidence", "low confidence"],

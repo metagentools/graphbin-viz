@@ -149,16 +149,23 @@ export function createColorForNode({ colorMode, mode, binOf, binColors, extents,
   };
 }
 
+/**
+ * Area-proportional radius multiplier, t in [0, 1] -> multiplier. Shared by
+ * `createSizeFactor` (drawing) and the legend (so the dots it shows are the
+ * same scale the canvas actually uses).
+ */
+export const SIZE_SCALE = (t) => (t == null ? 0.7 : Math.sqrt(0.35 + 1.65 * t));
+
+/** Contigs with 8+ neighbours are drawn at the same max size as "degree". */
+export const DEGREE_SIZE_CAP = 8;
+
 /** Radius multiplier for the active size channel. */
 export function createSizeFactor({ sizeMode, extents, model }) {
   if (sizeMode === "uniform") return () => 1;
 
-  // area-proportional so the visual weight matches the value
-  const scale = (t) => (t == null ? 0.7 : Math.sqrt(0.35 + 1.65 * t));
-
   if (sizeMode === "degree") {
-    return (n) => scale(Math.min(1, (model.adj.get(n.id) || []).length / 8));
+    return (n) => SIZE_SCALE(Math.min(1, (model.adj.get(n.id) || []).length / DEGREE_SIZE_CAP));
   }
 
-  return (n) => scale(featureNorm(extents, sizeMode, n[sizeMode]));
+  return (n) => SIZE_SCALE(featureNorm(extents, sizeMode, n[sizeMode]));
 }

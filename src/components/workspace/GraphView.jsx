@@ -270,7 +270,12 @@ export const GraphView = forwardRef(function GraphView({ derived }, ref) {
           >
             Legend
           </button>
-          <GraphLegend binColors={binColors} extents={extents} />
+          <GraphLegend
+            binColors={binColors}
+            extents={extents}
+            sizeMode={state.sizeMode}
+            baseRadius={state.nodeSize}
+          />
         </div>
       </div>
 

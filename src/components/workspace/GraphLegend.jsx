@@ -1,9 +1,15 @@
 import React from "react";
 
 import { BRAND_BLUE, BRAND_RED, UNBINNED_COLOR } from "../../constants/graph.js";
-import { RAMP_CAPTIONS } from "../../constants/encodings.js";
+import { RAMP_CAPTIONS, SIZE_CAPTIONS } from "../../constants/encodings.js";
 import { stagePalette } from "../../constants/stages.js";
-import { RAMP_INTERPOLATORS, formatFeatureValue, seqColor } from "../../lib/palette.js";
+import {
+  DEGREE_SIZE_CAP,
+  RAMP_INTERPOLATORS,
+  SIZE_SCALE,
+  formatFeatureValue,
+  seqColor,
+} from "../../lib/palette.js";
 import { useView } from "../../state/viewStore.jsx";
 
 function LegendRow({ label, color, variant = "solid" }) {
@@ -70,12 +76,60 @@ function LegendRamp({ mode, extents }) {
 }
 
 /**
+ * The other end of a size channel: two dots, small then large, standing for
+ * the same low/high extremes `LegendRamp` shows for colour. Degree has no
+ * dataset extents (it's capped at DEGREE_SIZE_CAP neighbours), so its ends
+ * are fixed rather than read from `extents`.
+ */
+function LegendSizeRamp({ sizeMode, extents, baseRadius }) {
+  const captions = SIZE_CAPTIONS[sizeMode];
+  if (!captions) return null;
+
+  let loText;
+  let hiText;
+  if (sizeMode === "degree") {
+    loText = "0";
+    hiText = `${DEGREE_SIZE_CAP}+`;
+  } else {
+    const [lo, hi] = extents?.[sizeMode] || [];
+    loText = formatFeatureValue(sizeMode, lo);
+    hiText = formatFeatureValue(sizeMode, hi);
+  }
+
+  // Same multiplier the canvas uses, so the two dots are proportioned the
+  // way the nodes actually are -- just capped so the legend stays compact.
+  const loR = baseRadius * SIZE_SCALE(0);
+  const hiR = baseRadius * SIZE_SCALE(1);
+  const displayScale = Math.min(1, 15 / hiR);
+  const loD = Math.max(4, loR * displayScale * 2);
+  const hiD = Math.max(loD, hiR * displayScale * 2);
+
+  return (
+    <div className="legend-size">
+      <div className="legend-size-dots">
+        <span className="legend-size-dot" style={{ width: loD, height: loD }}></span>
+        <span className="legend-size-dot" style={{ width: hiD, height: hiD }}></span>
+      </div>
+      <div className="legend-ramp-labels">
+        <RampEnd caption={captions[0]} value={loText} align="start" />
+        <RampEnd caption={captions[1]} value={hiText} align="end" />
+      </div>
+    </div>
+  );
+}
+
+/**
  * The legend is a key, not a control: it describes what is currently drawn, so
  * a marker appears here only while that marker is switched on.
  */
-export function GraphLegend({ binColors, extents }) {
+export function GraphLegend({ binColors, extents, sizeMode, baseRadius }) {
   const { state } = useView();
   const { colorMode, markers } = state;
+
+  const sizeRamp =
+    sizeMode && sizeMode !== "uniform" ? (
+      <LegendSizeRamp sizeMode={sizeMode} extents={extents} baseRadius={baseRadius} />
+    ) : null;
 
   if (colorMode === "stage") {
     const palette = stagePalette();
@@ -85,6 +139,7 @@ export function GraphLegend({ binColors, extents }) {
         <LegendRow label="Inferred by propagation" color={palette.propagated} />
         <LegendRow label="Label removed" color={palette.stripped} />
         <LegendRow label="No label available" color={palette.unresolved} />
+        {sizeRamp}
       </div>
     );
   }
@@ -93,6 +148,7 @@ export function GraphLegend({ binColors, extents }) {
     return (
       <div id="bin-legend" className="bin-legend">
         <LegendRamp mode={colorMode} extents={extents} />
+        {sizeRamp}
       </div>
     );
   }
@@ -116,6 +172,7 @@ export function GraphLegend({ binColors, extents }) {
       {bins.map(([bin, color]) => (
         <LegendRow key={bin} label={bin} color={color} />
       ))}
+      {sizeRamp}
     </div>
   );
 }
