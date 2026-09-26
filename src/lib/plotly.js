@@ -14,3 +14,12 @@ import Plotly from "plotly.js-basic-dist-min";
 import createPlotComponent from "react-plotly.js/factory";
 
 export const Plot = createPlotComponent(Plotly);
+
+// Exported so callers can issue imperative commands (e.g. `Plotly.relayout`)
+// straight at a graph div. Needed for anything `uirevision` protects from a
+// declarative `layout` prop update — the persisted box-select outline is
+// exactly that: `Plotly.react` treats it as user-edited state and keeps it
+// even when the new `layout` explicitly says `selections: []`, as long as
+// `uirevision` hasn't changed (which is also what keeps zoom/pan alive
+// across unrelated re-renders, so it can't just be dropped).
+export { Plotly };

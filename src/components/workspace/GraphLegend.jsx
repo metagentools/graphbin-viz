@@ -1,7 +1,8 @@
 import React from "react";
 
-import { BRAND_BLUE, BRAND_RED, UNBINNED_COLOR } from "../../constants/graph.js";
+import { BRAND_BLUE, BRAND_RED, NO_VALUE_COLOR, UNBINNED_COLOR } from "../../constants/graph.js";
 import { RAMP_CAPTIONS, SIZE_CAPTIONS } from "../../constants/encodings.js";
+import { getResults } from "../../lib/model.js";
 import { stagePalette } from "../../constants/stages.js";
 import {
   DEGREE_SIZE_CAP,
@@ -10,6 +11,7 @@ import {
   formatFeatureValue,
   seqColor,
 } from "../../lib/palette.js";
+import { useModel } from "../../state/modelStore.jsx";
 import { useView } from "../../state/viewStore.jsx";
 
 function LegendRow({ label, color, variant = "solid" }) {
@@ -59,18 +61,41 @@ function RampEnd({ caption, value, align }) {
   );
 }
 
+// confidence and disagreement are not read from the dataset -- they are
+// always a fraction in [0, 1] by construction (compare_assignments, and 1 -
+// confidence), so their ramp ends are fixed percentages rather than the
+// per-dataset min/max the raw feature channels use below.
+const FIXED_PERCENT_RANGE = { confidence: [0, 1], disagreement: [0, 1] };
+
+// What the flat "no value" swatch means for each ramp mode -- it is not the
+// zero-value end of the ramp, it is "this channel has nothing to report for
+// this contig", and those are different enough situations to spell out
+// rather than leave the grey dots unexplained.
+const NO_VALUE_LABELS = {
+  confidence: "no refinement record for this contig",
+  disagreement: "fewer than 2 results assigned this contig",
+};
+
 function LegendRamp({ mode, extents }) {
   const interpolator = RAMP_INTERPOLATORS[mode];
   const captions = RAMP_CAPTIONS[mode];
   const stops = Array.from({ length: 11 }, (_, i) => seqColor(interpolator, i / 10));
 
-  // For the raw-data channels the two ends of the ramp are only useful if
-  // they say what "low" and "high" actually mean for this dataset -- a bare
-  // "low"/"high" caption doesn't tell you whether coverage tops out at 8x or
-  // 800x.
-  const [lo, hi] = extents?.[mode] || [];
-  const loText = formatFeatureValue(mode, lo);
-  const hiText = formatFeatureValue(mode, hi);
+  let loText;
+  let hiText;
+  const fixedRange = FIXED_PERCENT_RANGE[mode];
+  if (fixedRange) {
+    loText = `${Math.round(fixedRange[0] * 100)}%`;
+    hiText = `${Math.round(fixedRange[1] * 100)}%`;
+  } else {
+    // For the raw-data channels the two ends of the ramp are only useful if
+    // they say what "low" and "high" actually mean for this dataset -- a bare
+    // "low"/"high" caption doesn't tell you whether coverage tops out at 8x or
+    // 800x.
+    const [lo, hi] = extents?.[mode] || [];
+    loText = formatFeatureValue(mode, lo);
+    hiText = formatFeatureValue(mode, hi);
+  }
 
   return (
     <div className="legend-ramp">
@@ -135,11 +160,28 @@ function LegendSizeRamp({ sizeMode, extents, baseRadius }) {
  */
 export function GraphLegend({ binColors, extents, sizeMode, baseRadius }) {
   const { state } = useView();
-  const { colorMode, markers } = state;
+  const { model } = useModel();
+  const { colorMode, markers, mode } = state;
 
   const sizeRamp =
     sizeMode && sizeMode !== "uniform" ? (
       <LegendSizeRamp sizeMode={sizeMode} extents={extents} baseRadius={baseRadius} />
+    ) : null;
+
+  // Disagreement is a cross-result statistic: it is computed over every
+  // loaded result, not just the one the "Result" selector currently shows
+  // (that selector only decides the graph's spatial grouping and filters).
+  // Spelling that out here, right next to the ramp it describes, is cheaper
+  // than making people find it in a manual.
+  const results = getResults(model);
+  const resultCount = results.length;
+  const currentResultName = results.find((r) => r.key === mode)?.name || mode;
+  const disagreementHint =
+    colorMode === "disagreement" && resultCount > 0 ? (
+      <div className="legend-hint">
+        Computed across all {resultCount} loaded result{resultCount === 1 ? "" : "s"},
+        regardless of the "Result" ({currentResultName}) selected above.
+      </div>
     ) : null;
 
   if (colorMode === "stage") {
@@ -156,10 +198,13 @@ export function GraphLegend({ binColors, extents, sizeMode, baseRadius }) {
   }
 
   if (RAMP_INTERPOLATORS[colorMode]) {
+    const noValueLabel = NO_VALUE_LABELS[colorMode];
     return (
       <div id="bin-legend" className="bin-legend">
         <LegendRamp mode={colorMode} extents={extents} />
+        {noValueLabel ? <LegendRow label={noValueLabel} color={NO_VALUE_COLOR} /> : null}
         {sizeRamp}
+        {disagreementHint}
       </div>
     );
   }

@@ -135,6 +135,18 @@ export function nodeDisagreement(n) {
   return typeof n.disagreement === "number" ? n.disagreement : 0;
 }
 
+/**
+ * Whether at least two results actually assigned this contig, so its
+ * disagreement figure reflects a real comparison rather than a default. A
+ * contig only one tool (or none) placed anywhere has nothing to agree or
+ * disagree about -- that is a different situation from every assigning
+ * result landing on the same bin, and the two must not collapse into the
+ * same "nothing to see here" colour.
+ */
+export function nodeHasComparison(n) {
+  return typeof n.n_assigned === "number" && n.n_assigned >= 2;
+}
+
 export function degreeOf(model, id) {
   return (model.adj.get(id) || []).length;
 }

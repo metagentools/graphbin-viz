@@ -9,7 +9,14 @@
 import { interpolateBlues, interpolateOranges, interpolatePurples } from "../d3.js";
 import { NO_VALUE_COLOR, UNBINNED_COLOR } from "../constants/graph.js";
 import { stagePalette } from "../constants/stages.js";
-import { getResults, nodeDisagreement, nodeStageGroup, nodeUncertainty, rawBin } from "./model.js";
+import {
+  getResults,
+  nodeDisagreement,
+  nodeHasComparison,
+  nodeStageGroup,
+  nodeUncertainty,
+  rawBin,
+} from "./model.js";
 
 /**
  * Bin -> colour, stable per dataset.
@@ -133,9 +140,14 @@ export function createColorForNode({ colorMode, mode, binOf, binColors, extents,
   }
 
   if (colorMode === "disagreement") {
+    // Grey means "no comparison was possible" (fewer than two results even
+    // assigned this contig) -- not shown on the ramp at all. Full agreement
+    // (every assigning result picked the same bin) is a real, meaningful
+    // value of zero, so it belongs at the light end of the purple ramp, the
+    // same as the legend shows, rather than being lumped in with the grey.
     return (n) => {
-      const d = nodeDisagreement(n);
-      return d <= 0 ? NO_VALUE_COLOR : seqColor(interpolatePurples, d);
+      if (!nodeHasComparison(n)) return NO_VALUE_COLOR;
+      return seqColor(interpolatePurples, nodeDisagreement(n));
     };
   }
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { Select } from "@fluentui/react-select";
 
 import { PLOT_TEXT } from "../../constants/graph.js";
@@ -8,7 +8,7 @@ import { useElementSize } from "../../hooks/useElementSize.js";
 import { buildExecutionUrl } from "../../lib/url.js";
 import { useExecution } from "../../state/executionStore.jsx";
 import { useView } from "../../state/viewStore.jsx";
-import { Plot } from "../../lib/plotly.js";
+import { Plot, Plotly } from "../../lib/plotly.js";
 import { MaximizeButton } from "../common/MaximizeButton.jsx";
 import { OpenInNewWindowButton } from "../common/OpenInNewWindowButton.jsx";
 import { ViewShimmer } from "../common/Shimmers.jsx";
@@ -50,6 +50,7 @@ export function FeatureScatter({ derived }) {
   const { state, dispatch } = useView();
   const { executionId, isPopout } = useExecution();
   const wrapRef = useRef(null);
+  const graphDivRef = useRef(null);
   const size = useElementSize(wrapRef);
 
   const maximized = state.maximizedView === "scatter";
@@ -131,6 +132,16 @@ export function FeatureScatter({ derived }) {
       // recoloring or filter changes; changing which fields are plotted is
       // the one time a stale zoom range would be actively misleading, so
       // that's the one case this key changes.
+      //
+      // `selections` (the persisted box-select outline) is deliberately
+      // *not* set here, even to `[]`. It's tempting to toggle it
+      // declaratively based on `hasSelection`, but flipping that key in and
+      // out of the layout on every selection change is itself what was
+      // triggering Plotly to recompute and refire a "selected" event with
+      // zero points on *every* selection change — including ones a
+      // completely different view (the flow diagram, the summary panel)
+      // had just made, clobbering them a tick later. Clearing the leftover
+      // outline is handled imperatively instead, below.
       uirevision: `${state.scatter.x}:${state.scatter.y}`,
       xaxis: {
         type: xSpec.log ? "log" : "linear",
@@ -164,21 +175,69 @@ export function FeatureScatter({ derived }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points, selection, hasSelection, colorOf, width, height, scale, xSpec, ySpec, state.scatter.x, state.scatter.y]);
 
+  // A plain click on the plot background (no drag) while dragmode is
+  // "select" fires `onSelected` with `event` undefined (or, depending on
+  // what else just changed, an event with an empty `points` array) — that
+  // *is* Plotly's deselect signal here, not a separate `plotly_deselect`
+  // (that one never actually fires in this build; `onDeselect` below is
+  // wired anyway in case a future Plotly version starts using it).
+  //
+  // The trouble: Plotly fires that exact same "selected, zero points"
+  // shape as a side effect of *any* re-render that changes this trace's
+  // marker style — including one triggered by a completely different view
+  // (the flow diagram, the summary panel) setting a new, non-empty shared
+  // selection. Treating every empty/undefined event as "the user
+  // deselected" was clobbering those a tick later. `pointerDownRef` is the
+  // fix: it's set on an actual mousedown inside this view (capture phase,
+  // so it runs before Plotly's own handlers) and only a mousedown-then-
+  // empty-selection sequence counts as a real deselect gesture. A non-empty
+  // event is unambiguous — it can only come from an actual box-select drag
+  // — so it's always honoured regardless of the flag.
+  const pointerDownRef = useRef(false);
+
   const handleSelected = (event) => {
-    if (!event) return;
-    const ids = event.points.map((p) => p.customdata);
+    const points = event?.points ?? [];
+    if (points.length === 0) {
+      if (!pointerDownRef.current) return; // not a real gesture on this view
+      pointerDownRef.current = false;
+      dispatch({ type: "selection/clear" });
+      return;
+    }
+    pointerDownRef.current = false;
     dispatch({
       type: "selection/set",
-      ids,
+      ids: points.map((p) => p.customdata),
       label: `${xSpec.label} × ${ySpec.label} brush`,
     });
   };
 
   const handleClick = (event) => {
+    pointerDownRef.current = false;
     const p = event?.points?.[0];
     if (!p) return;
     dispatch({ type: "inspector/lockNode", id: p.customdata });
   };
+
+  const handleDeselect = () => dispatch({ type: "selection/clear" });
+
+  const handleGraphDiv = (_figure, gd) => {
+    graphDivRef.current = gd;
+  };
+
+  // `uirevision` (set above) is what keeps a box-select outline drawn after
+  // its drag finishes — same mechanism that keeps zoom/pan across
+  // unrelated re-renders — so a declarative `layout.selections = []` alone
+  // does not remove one left from an earlier drag: `Plotly.react` treats it
+  // as user-edited state and keeps it on purpose. Clearing it once the
+  // shared selection is actually empty (via "Clear selection" or a
+  // background-click deselect) needs an imperative call that bypasses that
+  // protection instead.
+  useEffect(() => {
+    const gd = graphDivRef.current;
+    if (hasSelection || !gd) return;
+    if ((gd._fullLayout?.selections || []).length === 0) return;
+    Plotly.relayout(gd, { selections: [] });
+  }, [hasSelection]);
 
   const handleOpenNewWindow = () => {
     window.open(
@@ -233,7 +292,13 @@ export function FeatureScatter({ derived }) {
           }
         />
       </div>
-      <div className="scatter-wrap" ref={wrapRef}>
+      <div
+        className="scatter-wrap"
+        ref={wrapRef}
+        onMouseDownCapture={() => {
+          pointerDownRef.current = true;
+        }}
+      >
         {points.length === 0 ? (
           <div
             id="feature-scatter"
@@ -251,7 +316,10 @@ export function FeatureScatter({ derived }) {
             config={config}
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
             onSelected={handleSelected}
+            onDeselect={handleDeselect}
             onClick={handleClick}
+            onInitialized={handleGraphDiv}
+            onUpdate={handleGraphDiv}
           />
         )}
         <ViewShimmer />

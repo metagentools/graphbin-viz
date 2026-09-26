@@ -881,12 +881,13 @@ input[type="file"]:focus-visible{
 }
 
 .legend-hint{
-  margin-top: 14px;
-  padding: 10px 12px;
+  margin-top: 8px;
+  padding: 6px 8px;
   border: 1px dashed var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 10.5px;
+  line-height: 1.4;
 }
 
 .legend-title{
