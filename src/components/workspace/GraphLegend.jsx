@@ -40,9 +40,20 @@ function RampEnd({ caption, value, align }) {
   return (
     <div className={`legend-ramp-end legend-ramp-end-${align}`}>
       {lines.map((line, i) => (
-        <span key={i} className="legend-ramp-line">
-          {line}
-        </span>
+        <React.Fragment key={i}>
+          {i > 0 ? (
+            // The line break between "low"/"high" and "confidence" (etc.) is
+            // CSS only (each .legend-ramp-line is its own flex row) -- there
+            // is no actual space character between them in the DOM, so
+            // anything that reads the plain text (tests, copy/paste, a
+            // screen reader) sees them run together as one word. This adds
+            // the space back without changing how it looks.
+            <span aria-hidden="true" style={{ display: "none" }}>
+              {" "}
+            </span>
+          ) : null}
+          <span className="legend-ramp-line">{line}</span>
+        </React.Fragment>
       ))}
     </div>
   );
