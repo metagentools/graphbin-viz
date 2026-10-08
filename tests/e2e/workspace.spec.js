@@ -528,6 +528,31 @@ test("replay is available only on the result propagation produced", async ({ pag
   expect(errors).toEqual([]);
 });
 
+
+test("replay steps can be saved as a GIF", async ({ page }) => {
+  const errors = await openWorkspace(page);
+
+  // not available on a result propagation never produced
+  await expect(page.locator("#replay-save-gif")).toBeDisabled();
+
+  await page.selectOption("#view-mode", { label: "GraphBin" });
+  await expect(page.locator("#replay-save-gif")).toBeEnabled();
+  await expect(page.locator("#replay-save-gif")).toHaveText("Save GIF");
+
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.click("#replay-save-gif"),
+  ]);
+  expect(download.suggestedFilename()).toBe("graphbin-label-propagation.gif");
+
+  // capturing frames pauses or leaves the transport in its earlier state
+  // rather than racing the replay slider
+  await expect(page.locator("#replay-save-gif")).toBeEnabled();
+  await expect(page.locator("#replay-save-gif")).toHaveText("Save GIF");
+
+  expect(errors).toEqual([]);
+});
+
 test("filtering asks about disagreement; refinement changes are a marker", async ({
   page,
 }) => {
