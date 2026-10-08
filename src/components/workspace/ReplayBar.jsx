@@ -15,7 +15,7 @@ import { useView } from "../../state/viewStore.jsx";
  * produced it, and the other results were never built that way. Anywhere else
  * the transport is disabled rather than left to look available.
  */
-export function ReplayBar({ available, active }) {
+export function ReplayBar({ available, active, onSaveGif, gifExport }) {
   const { model } = useModel();
   const { state, dispatch } = useView();
   const { iter, max, playing, intervalMs } = state.replay;
@@ -32,6 +32,8 @@ export function ReplayBar({ available, active }) {
   }, [available, playing, dispatch]);
 
   const value = max === 0 ? "off" : active ? `iter ${iter}` : "final";
+
+  const canSaveGif = available && max > 0 && !gifExport;
 
   let hint;
   if (!available) {
@@ -93,6 +95,15 @@ export function ReplayBar({ available, active }) {
           ))}
         </Select>
       </label>
+      <Button
+        id="replay-save-gif"
+        type="button"
+        size="small"
+        disabled={!canSaveGif}
+        onClick={onSaveGif}
+      >
+        {gifExport ? `Saving GIF … ${gifExport.current}/${gifExport.total}` : "Save GIF"}
+      </Button>
       <span id="replay-hint" className="replay-hint">
         {hint}
       </span>

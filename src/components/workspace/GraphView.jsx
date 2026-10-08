@@ -3,6 +3,7 @@ import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef,
 import { select, zoom } from "../../d3.js";
 import { PICK_RADIUS_PX } from "../../constants/graph.js";
 import { drawGraph } from "../../lib/drawGraph.js";
+import { exportReplayGif } from "../../lib/exportGif.js";
 import { pickNode } from "../../lib/spatial.js";
 import { fitTransform, focusTransform, screenToWorld } from "../../lib/viewport.js";
 import { useElementSize } from "../../hooks/useElementSize.js";
@@ -33,6 +34,7 @@ export const GraphView = forwardRef(function GraphView({ derived }, ref) {
     sizeOf,
     replayActive,
     replayAvailable,
+    unbinnedColor,
   } = derived;
   const { state, dispatch } = useView();
 
@@ -45,6 +47,7 @@ export const GraphView = forwardRef(function GraphView({ derived }, ref) {
   const [transform, setTransform] = useState(null);
   const [hoverNodeId, setHoverNodeId] = useState(null);
   const [tooltip, setTooltip] = useState(null);
+  const [gifExport, setGifExport] = useState(null);
 
   /* ------------------------------- zoom ------------------------------- */
 
@@ -172,6 +175,30 @@ export const GraphView = forwardRef(function GraphView({ derived }, ref) {
     replayActive,
   ]);
 
+  /* ------------------------------ gif export ------------------------------ */
+
+  const handleSaveGif = useCallback(async () => {
+    if (gifExport || !model || !size.width || !size.height) return;
+    const total = state.replay.max + 1;
+    setGifExport({ current: 0, total });
+    try {
+      await exportReplayGif({
+        model,
+        transform,
+        width: size.width,
+        height: size.height,
+        dpr: window.devicePixelRatio || 1,
+        binColors,
+        extents,
+        unbinnedColor,
+        state,
+        onProgress: (current, progressTotal) => setGifExport({ current, total: progressTotal }),
+      });
+    } finally {
+      setGifExport(null);
+    }
+  }, [gifExport, model, size.width, size.height, transform, binColors, extents, unbinnedColor, state]);
+
   /* ---------------------------- interaction ---------------------------- */
 
   const pickAt = useCallback(
@@ -279,7 +306,12 @@ export const GraphView = forwardRef(function GraphView({ derived }, ref) {
         </div>
       </div>
 
-      <ReplayBar available={replayAvailable} active={replayActive} />
+      <ReplayBar
+        available={replayAvailable}
+        active={replayActive}
+        onSaveGif={handleSaveGif}
+        gifExport={gifExport}
+      />
     </div>
   );
 });
